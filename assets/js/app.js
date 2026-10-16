@@ -226,17 +226,20 @@
     }
     track.innerHTML = list.map(function (r) {
       var photo = safeUrl(r.photo), video = safeUrl(r.video), subs = safeUrl(r.subtitles);
-      var who = '<strong>' + esc(r.name) + '</strong>' + (r.age ? ', ' + esc(r.age) + ' anni' : '') + (r.city ? '<br>' + esc(r.city) : '');
+      var initials = String(r.name || '?').trim().split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
+      var meta = [r.age ? esc(r.age) + ' anni' : '', esc(r.city || '')].filter(Boolean).join(' · ');
       return '<article class="review">' +
-        '<div class="review__head">' +
-          (photo ? '<img class="media review__photo" src="' + esc(photo) + '" width="84" height="84" loading="lazy" alt="' + esc(r.name) + '">' : '') +
-          '<p class="review__who">' + who + '</p>' +
-        '</div>' +
         '<blockquote class="review__text">' + esc(r.text) + '</blockquote>' +
         (video ? '<video class="review__video" controls preload="none" playsinline' + (photo ? ' poster="' + esc(photo) + '"' : '') + '>' +
           '<source src="' + esc(video) + '" type="video/mp4">' +
           (subs ? '<track kind="subtitles" srclang="it" label="Italiano" src="' + esc(subs) + '" default>' : '') +
         '</video>' : '') +
+        '<footer class="review__head">' +
+          (photo
+            ? '<img class="review__photo" src="' + esc(photo) + '" width="64" height="64" loading="lazy" alt="">'
+            : '<span class="review__avatar" aria-hidden="true">' + esc(initials) + '</span>') +
+          '<p class="review__who"><strong>' + esc(r.name) + '</strong>' + (meta ? '<span>' + meta + '</span>' : '') + '</p>' +
+        '</footer>' +
       '</article>';
     }).join('');
   }
@@ -249,27 +252,69 @@
       .catch(function () { /* сервер недоступен — остаются отзывы из HTML */ });
   }
 
-  /* ---------- Слайдер отзывов ---------- */
+  /* ---------- Карусель отзывов ----------
+     Листается свайпом, стрелками (по кругу), точками и клавишами ← →.
+     Автопрокрутки нет: аудитории 60+ нужно время дочитать (WCAG 2.2.2). */
   function initSlider() {
     $$('[data-slider]').forEach(function (root) {
       var track = $('.slider__track', root);
       var prev = $('[data-slider-prev]', root);
       var next = $('[data-slider-next]', root);
+      var dotsBox = $('[data-slider-dots]', root);
       var count = $('[data-slider-count]', root);
       var nav = $('.slider__nav', root);
-      var items = track.children;
-      function step() { return items[0] ? items[0].getBoundingClientRect().width + 16 : track.clientWidth; }
-      function update() {
-        var all = track.scrollWidth <= track.clientWidth + 4;
-        nav.hidden = all;
-        var i = Math.round(track.scrollLeft / step());
-        count.textContent = (i + 1) + ' / ' + items.length;
-        prev.disabled = track.scrollLeft < 4;
-        next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+      var items = Array.prototype.slice.call(track.children);
+      var dots = [];
+
+      function gap() { return parseFloat(getComputedStyle(track).columnGap) || 16; }
+      function stepW() { return items[0] ? items[0].getBoundingClientRect().width + gap() : track.clientWidth; }
+      function perView() { return Math.max(1, Math.round((track.clientWidth + gap()) / stepW())); }
+      function pages() { return Math.max(1, items.length - perView() + 1); }
+      function current() { return Math.min(pages() - 1, Math.round(track.scrollLeft / stepW())); }
+      function go(i) {
+        var n = pages();
+        i = (i + n) % n; // по кругу
+        track.scrollTo({ left: i * stepW() });
+        setTimeout(update, 450); // на случай, если событие scroll не придёт
       }
-      prev.addEventListener('click', function () { track.scrollBy({ left: -step() }); });
-      next.addEventListener('click', function () { track.scrollBy({ left: step() }); });
-      track.addEventListener('scroll', function () { window.requestAnimationFrame(update); }, { passive: true });
+
+      function buildDots() {
+        var n = pages();
+        if (dots.length === n) return;
+        dotsBox.innerHTML = '';
+        dots = [];
+        for (var i = 0; i < n; i++) {
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'slider__dot';
+          b.setAttribute('aria-label', 'Recensione ' + (i + 1) + ' di ' + n);
+          b.addEventListener('click', (function (k) { return function () { go(k); }; })(i));
+          dotsBox.appendChild(b);
+          dots.push(b);
+        }
+        // Много отзывов — точки заменяет счётчик
+        dotsBox.hidden = n > 8;
+        count.hidden = n <= 8;
+      }
+
+      function update() {
+        buildDots();
+        var n = pages(), i = current();
+        nav.hidden = n <= 1;
+        dots.forEach(function (d, k) { d.setAttribute('aria-current', k === i ? 'true' : 'false'); });
+        count.textContent = (i + 1) + ' / ' + n;
+      }
+
+      prev.addEventListener('click', function () { go(current() - 1); });
+      next.addEventListener('click', function () { go(current() + 1); });
+      track.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); go(current() - 1); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); go(current() + 1); }
+      });
+      var tmr = 0;
+      track.addEventListener('scroll', function () {
+        clearTimeout(tmr); tmr = setTimeout(update, 60);
+      }, { passive: true });
       window.addEventListener('resize', update);
       update();
     });
