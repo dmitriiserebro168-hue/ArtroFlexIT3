@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Проверка синтаксиса PHP
-        run: for f in api/*.php; do php -l "$f"; done
+        run: for f in api/*.php admin/*.php; do php -l "$f"; done
 
       - name: Upload via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5

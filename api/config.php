@@ -68,6 +68,13 @@ return (function (): array {
         // Каталог для служебных файлов
         'data_dir'        => __DIR__ . '/../_data',
 
+        // MySQL для журнала заявок и аналитики (как в it2): ['host' => 'localhost', 'name' => …, 'user' => …, 'pass' => …]
+        'db'              => is_array($secret['db'] ?? null) ? $secret['db'] : [],
+        // Письма об ошибках отправки лидов (необязательно)
+        'alert_email'     => $s('alert_email'),
+        // Пароль дашборда /admin/stats.php (пусто — используется пароль редактора отзывов)
+        'stats_password'  => $s('stats_password', $s('admin_password')),
+
         // Пароль редактора отзывов (admin/). Пусто — вход закрыт.
         'admin_password'  => $s('admin_password'),
 

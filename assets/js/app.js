@@ -272,6 +272,7 @@
         var more = document.createElement('button');
         more.type = 'button';
         more.className = 'btn reviews-more';
+        more.setAttribute('data-track', 'btn-reviews-more');
         more.textContent = 'Mostra altre ' + (items.length - SHOW_FIRST) + ' recensioni';
         more.addEventListener('click', function () {
           root.classList.add('is-expanded');

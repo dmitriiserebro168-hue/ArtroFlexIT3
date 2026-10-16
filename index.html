@@ -27,14 +27,14 @@
 <header class="topbar">
   <div class="wrap topbar__inner">
     <span class="topbar__brand" data-t="productName">Artroflex Active</span>
-    <a class="topbar__link" href="#richiesta" data-cta="topbar">Richiedi una chiamata</a>
+    <a class="topbar__link" href="#richiesta" data-cta="topbar" data-track="cta-topbar">Richiedi una chiamata</a>
   </div>
 </header>
 
 <main id="main">
 
 <!-- ============ БЛОК 1. HERO ============ -->
-<section class="hero" aria-labelledby="hero-title">
+<section class="hero" aria-labelledby="hero-title" data-track="sec-hero">
   <div class="wrap hero__grid">
     <div class="hero__text">
       <p class="eyebrow">Offerta disponibile in Italia</p>
@@ -51,14 +51,14 @@
         <p class="hero__product-note"><strong>Integratore alimentare in capsule</strong> con glucosamina, condroitina, MSM, collagene marino ed estratti vegetali.</p>
       </div>
 
-      <div class="price-strip" data-claim="discount" data-offer-promo>
+      <div class="price-strip" data-claim="discount" data-offer-promo data-track="price-hero">
         <span class="price-strip__badge">−<span data-price="discountPercent">50</span>%</span>
         <span class="price-strip__old"><s data-price="old">78,00 €</s></span>
         <span class="price-strip__new" data-price="current">39,00 €</span>
       </div>
       <p class="hero__product-note" data-claim-alt="discount">Scopri le condizioni dell'offerta attuale.</p>
 
-      <a class="btn btn--cta" href="#richiesta" data-cta="hero">Richiedi una chiamata</a>
+      <a class="btn btn--cta" href="#richiesta" data-cta="hero" data-track="cta-hero">Richiedi una chiamata</a>
       <p class="btn-note">Gratuito e senza impegno. La richiesta non è un acquisto.</p>
 
       <ul class="trust-row" aria-label="Condizioni dell'offerta">
@@ -69,7 +69,7 @@
     </div>
 
     <div class="hero__media">
-      <picture class="media" style="aspect-ratio:537/941">
+      <picture class="media" style="aspect-ratio:537/941" data-track="img-hero">
         <source srcset="assets/img/hero-coppia.webp" type="image/webp">
         <img src="assets/img/hero-coppia.jpg" width="537" height="941" alt="Una coppia di 60–70 anni passeggia sorridendo lungo la costa" fetchpriority="high">
       </picture>
@@ -78,7 +78,7 @@
 </section>
 
 <!-- ============ БЛОК 2. ПРОБЛЕМА И ЭМПАТИЯ ============ -->
-<section class="section" aria-labelledby="problem-title">
+<section class="section" aria-labelledby="problem-title" data-track="sec-problem">
   <div class="wrap narrow-wrap">
     <div>
       <h2 id="problem-title">Ti è mai capitato di alzarti al mattino con rigidità alle articolazioni?</h2>
@@ -126,7 +126,7 @@
     <h3 class="center">Che cos'è il dolore articolare?</h3>
     <p class="center narrow">Il dolore articolare è un fastidio o una sensazione dolorosa che può comparire quando un'articolazione è irritata, sovraccaricata o infiammata.</p>
     <figure class="infographic">
-      <img src="assets/img/info-dolore-articolare.webp" width="1122" height="1402" loading="lazy" alt="" onerror="this.parentNode.classList.add('is-missing')">
+      <img data-track="img-info-dolore" src="assets/img/info-dolore-articolare.webp" width="1122" height="1402" loading="lazy" alt="" onerror="this.parentNode.classList.add('is-missing')">
       <span class="infographic__missing">Infografica: salvare il file come assets/img/info-dolore-articolare.webp</span>
     </figure>
     <div class="info-grid">
@@ -153,12 +153,12 @@
 </section>
 
 <!-- ============ БЛОК 2b. ЧТО ОБЫЧНО ПОМОГАЕТ (из креатива заказчика) ============ -->
-<section class="section" aria-labelledby="helps-title">
+<section class="section" aria-labelledby="helps-title" data-track="sec-helps">
   <div class="wrap">
     <h2 id="helps-title" class="center">Cosa aiuta di solito con il dolore alle articolazioni?</h2>
     <p class="center narrow">Molte persone cercano sollievo con diversi metodi. Ecco i più comuni:</p>
     <figure class="infographic infographic--narrow">
-      <img src="assets/img/info-cosa-aiuta.webp" width="1092" height="1440" loading="lazy" alt="" onerror="this.parentNode.classList.add('is-missing')">
+      <img data-track="img-info-aiuta" src="assets/img/info-cosa-aiuta.webp" width="1092" height="1440" loading="lazy" alt="" onerror="this.parentNode.classList.add('is-missing')">
       <span class="infographic__missing">Infografica: salvare il file come assets/img/info-cosa-aiuta.webp</span>
     </figure>
     <div class="cards cards--3">
@@ -188,7 +188,7 @@
 </section>
 
 <!-- ============ БЛОК 3. РЕШЕНИЕ ============ -->
-<section class="section section--tint" aria-labelledby="solution-title">
+<section class="section section--tint" aria-labelledby="solution-title" data-track="sec-solution">
   <div class="wrap">
     <h2 id="solution-title" class="center">Scopri <span data-t="productName">Artroflex Active</span></h2>
 
@@ -226,14 +226,14 @@
     </ol>
 
     <div class="cta-block">
-      <a class="btn btn--cta" href="#richiesta" data-cta="after-product">Richiedi una chiamata</a>
+      <a class="btn btn--cta" href="#richiesta" data-cta="after-product" data-track="cta-after-product">Richiedi una chiamata</a>
       <p class="btn-note">Un operatore ti spiega il prodotto e le condizioni dell'offerta.</p>
     </div>
   </div>
 </section>
 
 <!-- ============ БЛОК 4. МЕХАНИЗМ ДЕЙСТВИЯ ============ -->
-<section class="section" aria-labelledby="mechanism-title">
+<section class="section" aria-labelledby="mechanism-title" data-track="sec-mechanism">
   <div class="wrap">
     <h2 id="mechanism-title" class="center">I componenti e il loro ruolo</h2>
     <p class="center narrow">Ogni componente ha un ruolo preciso nella formula.</p>
@@ -284,7 +284,7 @@
     <div class="before-after" data-claim="beforeAfter">
       <h3 class="center">Dolore e rigidità? Torna a muoverti con libertà!</h3>
       <figure class="infographic">
-        <img src="assets/img/prima-dopo.webp" width="1374" height="1145" loading="lazy" alt="" onerror="this.parentNode.classList.add('is-missing')">
+        <img data-track="img-before-after" src="assets/img/prima-dopo.webp" width="1374" height="1145" loading="lazy" alt="" onerror="this.parentNode.classList.add('is-missing')">
         <span class="infographic__missing">Immagine «prima → dopo»: salvare il file come assets/img/prima-dopo.webp</span>
       </figure>
       <div class="before-after__grid">
@@ -308,7 +308,7 @@
 </section>
 
 <!-- ============ БЛОК 5. СОСТАВ И ПРИМЕНЕНИЕ ============ -->
-<section class="section section--tint" aria-labelledby="composition-title">
+<section class="section section--tint" aria-labelledby="composition-title" data-track="sec-composition">
   <div class="wrap two-col two-col--top">
     <div>
       <h2 id="composition-title">Cosa contiene <span data-t="productName">Artroflex Active</span>?</h2>
@@ -350,7 +350,7 @@
 </section>
 
 <!-- ============ БЛОК 6. ОТЗЫВЫ ============ -->
-<section class="section" id="reviews" aria-labelledby="reviews-title">
+<section class="section" id="reviews" aria-labelledby="reviews-title" data-track="sec-reviews">
   <div class="wrap">
     <h2 id="reviews-title" class="center">Le esperienze dei nostri clienti</h2>
 
@@ -387,17 +387,17 @@
         </article>
       </div>
       <div class="slider__nav">
-        <button type="button" class="slider__btn" data-slider-prev aria-label="Recensione precedente">‹</button>
+        <button type="button" class="slider__btn" data-slider-prev data-track="reviews-prev" aria-label="Recensione precedente">‹</button>
         <div class="slider__dots" data-slider-dots></div>
         <span class="slider__count" data-slider-count aria-live="polite" hidden>1 / 3</span>
-        <button type="button" class="slider__btn" data-slider-next aria-label="Recensione successiva">›</button>
+        <button type="button" class="slider__btn" data-slider-next data-track="reviews-next" aria-label="Recensione successiva">›</button>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ============ БЛОК 7. СПЕЦИАЛИСТЫ ============ -->
-<section class="section section--tint" aria-labelledby="experts-title">
+<section class="section section--tint" aria-labelledby="experts-title" data-track="sec-experts">
   <div class="wrap">
     <h2 id="experts-title" class="center">Il parere degli specialisti</h2>
     <article class="expert">
@@ -413,7 +413,7 @@
 </section>
 
 <!-- ============ БЛОК 8. ДОКУМЕНТЫ И ЦИФРЫ ============ -->
-<section class="section" aria-labelledby="trust-title">
+<section class="section" aria-labelledby="trust-title" data-track="sec-trust">
   <div class="wrap">
     <h2 id="trust-title" class="center">Informazioni verificabili e trasparenza</h2>
 
@@ -431,14 +431,14 @@
     </ul>
 
     <div class="cta-block">
-      <a class="btn btn--cta" href="#richiesta" data-cta="after-trust">Richiedi una chiamata</a>
+      <a class="btn btn--cta" href="#richiesta" data-cta="after-trust" data-track="cta-after-trust">Richiedi una chiamata</a>
       <p class="btn-note">Gratuito e senza impegno.</p>
     </div>
   </div>
 </section>
 
 <!-- ============ БЛОК 9. ОФФЕР ============ -->
-<section class="section section--tint" id="offerta" aria-labelledby="offer-title">
+<section class="section section--tint" id="offerta" aria-labelledby="offer-title" data-track="sec-offer">
   <div class="wrap">
     <h2 id="offer-title" class="center">Scopri l'offerta per <span data-t="productName">Artroflex Active</span></h2>
 
@@ -452,7 +452,7 @@
           <li>Utilizzo consigliato: 3 capsule al giorno (2 a pranzo, 1 la sera) — una confezione dura 10 giorni</li>
         </ul>
 
-        <div class="price-box">
+        <div class="price-box" data-track="price-offer">
           <p class="price-box__badge" data-claim="discount" data-offer-promo>Sconto del <span data-price="discountPercent">50</span>%</p>
           <p class="price-box__old" data-claim="discount" data-offer-promo>Prezzo precedente: <s data-price="old">€ —</s></p>
           <p class="price-box__now">Prezzo: <strong data-price="current">€ —</strong></p>
@@ -463,7 +463,7 @@
           <p class="caption" data-claim="discount" data-offer-promo>Il prezzo precedente è il prezzo più basso applicato nei 30 giorni prima della promozione.</p>
         </div>
 
-        <a class="btn btn--cta btn--block" href="#richiesta" data-cta="offer">Richiedi una chiamata</a>
+        <a class="btn btn--cta btn--block" href="#richiesta" data-cta="offer" data-track="cta-offer">Richiedi una chiamata</a>
         <p class="btn-note">L'acquisto non avviene su questa pagina: un operatore ti spiegherà le condizioni.</p>
       </div>
     </div>
@@ -471,7 +471,7 @@
 </section>
 
 <!-- ============ БЛОК 10. ДОСТАВКА, ОПЛАТА, ВОЗВРАТ ============ -->
-<section class="section" aria-labelledby="terms-title">
+<section class="section" aria-labelledby="terms-title" data-track="sec-terms">
   <div class="wrap">
     <h2 id="terms-title" class="center">Consegna, pagamento e garanzia</h2>
     <div class="cards cards--3">
@@ -499,36 +499,36 @@
 </section>
 
 <!-- ============ БЛОК 11. FAQ ============ -->
-<section class="section section--tint" aria-labelledby="faq-title">
+<section class="section section--tint" aria-labelledby="faq-title" data-track="sec-faq">
   <div class="wrap narrow-wrap">
     <h2 id="faq-title" class="center">Domande frequenti</h2>
-    <p class="center"><button type="button" class="link-btn" data-faq-toggle aria-pressed="false">Mostra tutte le risposte</button></p>
+    <p class="center"><button type="button" class="link-btn" data-faq-toggle data-track="faq-all" aria-pressed="false">Mostra tutte le risposte</button></p>
 
     <div class="faq">
-      <details>
+      <details data-track="faq-1">
         <summary>È sicuro? Ci sono effetti indesiderati?</summary>
         <div class="faq__a"><p><span data-t="productName">Artroflex Active</span> è un integratore alimentare: va usato come indicato in etichetta, senza superare la dose giornaliera consigliata di 3 capsule.</p>
         <p class="ph">[Controindicazioni e possibili effetti indesiderati dalla documentazione del produttore, inclusi gli allergeni.]</p>
         <p>In caso di dubbi, chiedi consiglio al tuo medico o farmacista.</p></div>
       </details>
-      <details>
+      <details data-track="faq-2">
         <summary>Quanto dura una confezione?</summary>
         <div class="faq__a"><p>Una confezione contiene 30 capsule. Con la dose consigliata di 3 capsule al giorno (2 a pranzo e 1 la sera) dura 10 giorni.</p></div>
       </details>
-      <details>
+      <details data-track="faq-3">
         <summary>Quando riceverò il prodotto?</summary>
         <div class="faq__a"><p>Di solito in <span data-t="deliveryTime">1–2 giorni</span> dall'ordine confermato con l'operatore.</p></div>
       </details>
-      <details>
+      <details data-track="faq-4">
         <summary>Posso pagare alla consegna?</summary>
         <div class="faq__a"><p><span data-claim="cod">Sì, puoi pagare alla consegna.</span> Altri metodi: pagamento online o bonifico bancario (IBAN).</p></div>
       </details>
-      <details>
+      <details data-track="faq-5">
         <summary>Come si usa il prodotto se assumo altri medicinali?</summary>
         <div class="faq__a"><p class="ph">[Avvertenze ufficiali del produttore.]</p>
         <p>Se assumi farmaci, prima di iniziare parlane con il tuo medico o farmacista.</p></div>
       </details>
-      <details>
+      <details data-track="faq-6">
         <summary>Che cosa succede dopo aver inviato la richiesta?</summary>
         <div class="faq__a"><p>Dopo l'invio della richiesta, un operatore di <span data-t="partnerName" class="ph">[NOME PARTNER]</span> potrà contattarti telefonicamente per spiegarti le caratteristiche del prodotto e le condizioni dell'offerta. La richiesta non comporta automaticamente un acquisto.</p></div>
       </details>
@@ -537,7 +537,7 @@
 </section>
 
 <!-- ============ БЛОК 12. ФИНАЛЬНЫЙ ОФФЕР ============ -->
-<section class="section final" aria-labelledby="final-title">
+<section class="section final" aria-labelledby="final-title" data-track="sec-final">
   <div class="wrap">
     <h2 id="final-title" class="center">Scopri l'offerta attualmente disponibile</h2>
 
@@ -549,7 +549,7 @@
           <strong data-price="current">€ —</strong>
         </p>
 
-        <div class="timer" data-claim="timer" data-offer-promo>
+        <div class="timer" data-claim="timer" data-offer-promo data-track="timer-final">
           <p class="timer__label">La tua offerta personale è valida fino al <span data-offer-end-date>—</span></p>
           <div class="timer__clock" role="timer" aria-label="Tempo rimanente">
             <div><strong data-timer="d">0</strong><span>giorni</span></div>
@@ -563,7 +563,7 @@
 
         <p class="offer-ended" data-offer-ended hidden>L'offerta promozionale è terminata. Richiedi una chiamata per conoscere le condizioni attuali.</p>
 
-        <a class="btn btn--cta btn--block" href="#richiesta" data-cta="final">Richiedi una chiamata</a>
+        <a class="btn btn--cta btn--block" href="#richiesta" data-cta="final" data-track="cta-final">Richiedi una chiamata</a>
         <p class="btn-note">
           <span data-claim="call10min">Ti richiamiamo entro <span data-t="callbackTime">10 minuti</span>.</span>
           <span data-claim-alt="call10min">Ti richiamiamo al più presto.</span>
@@ -575,7 +575,7 @@
 </section>
 
 <!-- ============ БЛОК 13. ФОРМА ============ -->
-<section class="section section--form" id="richiesta" aria-labelledby="form-title" tabindex="-1">
+<section class="section section--form" id="richiesta" aria-labelledby="form-title" data-track="sec-form" tabindex="-1">
   <div class="wrap narrow-wrap">
     <div class="form-card" id="form-card">
       <h2 id="form-title" class="center">Richiedi una chiamata</h2>
@@ -606,13 +606,13 @@
 
         <div class="field field--check" data-consent-field>
           <input id="f-consent" name="consent" type="checkbox" value="1" checked aria-describedby="f-consent-err">
-          <label for="f-consent">Ho letto l'<a href="privacy.html" target="_blank" rel="noopener">Informativa privacy</a> e chiedo di essere richiamato da <span data-t="partnerName">[NOME PARTNER]</span> per ricevere informazioni su questa offerta.</label>
+          <label for="f-consent">Ho letto l'<a data-track="link-privacy" href="privacy.html" target="_blank" rel="noopener">Informativa privacy</a> e chiedo di essere richiamato da <span data-t="partnerName">[NOME PARTNER]</span> per ricevere informazioni su questa offerta.</label>
           <p class="field__err" id="f-consent-err" hidden>Per inviare la richiesta conferma di aver letto l'informativa</p>
         </div>
 
         <p class="form-error" id="form-error" role="alert" hidden>Non è stato possibile inviare la richiesta. Riprova.</p>
 
-        <button class="btn btn--cta btn--block" type="submit" id="f-submit">
+        <button class="btn btn--cta btn--block" type="submit" id="f-submit" data-track="btn-submit">
           <span class="btn__label">Richiedi una chiamata</span>
           <span class="btn__busy" aria-hidden="true">Invio in corso…</span>
         </button>
@@ -659,7 +659,7 @@
 
 <!-- Липкая кнопка на мобильном -->
 <div class="sticky-cta" id="sticky-cta" hidden>
-  <a class="btn btn--cta btn--block" href="#richiesta" data-cta="sticky">Richiedi una chiamata</a>
+  <a class="btn btn--cta btn--block" href="#richiesta" data-cta="sticky" data-track="cta-sticky">Richiedi una chiamata</a>
 </div>
 
 <!-- Cookie-баннер (показывается только если задан Meta Pixel) -->
@@ -673,5 +673,6 @@
 </div>
 
 <script src="assets/js/app.js" defer></script>
+<script src="assets/js/track.js" defer></script>
 </body>
 </html>
