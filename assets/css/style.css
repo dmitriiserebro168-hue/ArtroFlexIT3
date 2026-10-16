@@ -455,3 +455,15 @@ picture.media img { width: 100%; height: 100%; object-fit: cover; }
   color: var(--trust); font-weight: 800; font-size: 20px;
 }
 .field.is-valid #f-name, .field.is-valid input[type="text"] { border-color: var(--trust); }
+
+/* Фото товара с прозрачным фоном */
+.media--product { background: transparent; border-radius: 0; }
+.media--product img { object-fit: contain; }
+.hero__product { grid-template-columns: 140px 1fr; }
+.hero__product .media--product { max-width: 140px; }
+.final__img { max-width: 260px; }
+@media (max-width: 767px) {
+  .hero__product { grid-template-columns: 112px 1fr; }
+  .hero__product .media--product { max-width: 112px; }
+}
+@media (min-width: 768px) { .final__box { grid-template-columns: 260px 1fr; } }
