@@ -299,8 +299,7 @@ p { margin: 0 0 1em; }
 
 /* ---------- Утверждения из концепции ---------- */
 /* Без JS видны только нейтральные варианты */
-[data-claim] { display: none !important; }
-[data-claim].claim-on { display: revert !important; }
+[data-claim]:not(.claim-on) { display: none !important; }
 [data-claim-alt].claim-off { display: none !important; }
 [data-offer-promo].promo-off { display: none !important; }
 
@@ -516,4 +515,40 @@ img.review__photo { width: 52px; height: 52px; padding: 0; border-radius: 50%; o
   }
   .reviews-more:hover { background: var(--trust-bg); }
   .reviews-more[hidden] { display: none !important; }
+}
+
+/* ---------- Блок доверия: цифры + производитель одной панелью ---------- */
+.trust-panel {
+  max-width: 880px; margin: 28px auto 0; overflow: hidden;
+  background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 6px 24px rgba(0,0,0,.05);
+}
+.trust-panel .stats { margin: 0; grid-template-columns: repeat(3, 1fr); gap: 0; }
+.trust-panel .stats li {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: none; border-radius: 0; padding: 26px 12px 22px;
+}
+.trust-panel .stats li + li { border-left: 1px solid var(--line); }
+.stats__ico {
+  width: 46px; height: 46px; border-radius: 50%; margin-bottom: 6px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--trust-bg); color: var(--trust);
+}
+.trust-panel .stats strong { font-size: 44px; line-height: 1; letter-spacing: -.01em; }
+.trust-panel .stats span:not(.stats__ico) { font-size: 17px; color: var(--text-soft); line-height: 1.3; }
+.trust-panel__foot {
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0;
+  padding: 16px 20px; background: var(--bg-tint); border-top: 1px solid var(--line);
+  font-size: 18px; text-align: left;
+}
+
+.trust-panel > [data-claim]:not(.claim-on) + .trust-panel__foot { border-top: 0; }
+.trust-panel + .cta-block { margin-top: 32px; }
+@media (max-width: 480px) {
+  .trust-panel { border-radius: 14px; margin-top: 20px; }
+  .trust-panel .stats li { padding: 18px 4px 16px; }
+  .stats__ico { width: 38px; height: 38px; margin-bottom: 4px; }
+  .stats__ico svg { width: 19px; height: 19px; }
+  .trust-panel .stats strong { font-size: 27px; }
+  .trust-panel .stats span:not(.stats__ico) { font-size: 14px; }
+  .trust-panel__foot { font-size: 16px; padding: 14px 16px; }
 }
