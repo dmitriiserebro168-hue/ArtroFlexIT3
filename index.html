@@ -597,7 +597,7 @@
         <div class="field">
           <label for="f-phone">Numero di telefono</label>
           <div class="phone">
-            <span class="phone__pre" aria-hidden="true">+39</span>
+            <span class="phone__pre" aria-hidden="true"><span class="phone__flag"></span>+39</span>
             <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="18" placeholder="Es. 333 123 4567" required aria-describedby="f-phone-hint f-phone-err">
           </div>
           <p class="field__hint" id="f-phone-hint">Il prefisso +39 è già inserito. Inserisci il numero: 10–11 cifre.</p>
@@ -611,7 +611,7 @@
         </div>
 
         <div class="field field--check" data-consent-field>
-          <input id="f-consent" name="consent" type="checkbox" value="1" aria-describedby="f-consent-err">
+          <input id="f-consent" name="consent" type="checkbox" value="1" checked aria-describedby="f-consent-err">
           <label for="f-consent">Ho letto l'<a href="privacy.html" target="_blank" rel="noopener">Informativa privacy</a> e chiedo di essere richiamato da <span data-t="partnerName">[NOME PARTNER]</span> per ricevere informazioni su questa offerta.</label>
           <p class="field__err" id="f-consent-err" hidden>Per inviare la richiesta conferma di aver letto l'informativa</p>
         </div>

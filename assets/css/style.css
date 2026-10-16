@@ -424,11 +424,34 @@ picture.media img { width: 100%; height: 100%; object-fit: cover; }
 
 .review__photo { object-fit: cover; }
 
-/* Телефон с фиксированным префиксом +39 (как в it2) */
-.phone { display: flex; align-items: stretch; }
-.phone__pre {
-  display: flex; align-items: center; padding: 0 14px; font-size: 20px; font-weight: 700;
-  background: var(--bg-tint); border: 2px solid #8a948f; border-right: 0; border-radius: 10px 0 0 10px; color: var(--text);
+/* Телефон: единое поле с флагом и префиксом +39 внутри (правила ввода как в it2) */
+.phone {
+  display: flex; align-items: stretch; min-height: 58px;
+  background: #fff; border: 2px solid #8a948f; border-radius: 10px; overflow: hidden;
+  transition: border-color .15s, box-shadow .15s;
 }
-.phone input[type="tel"] { border-radius: 0 10px 10px 0; min-width: 0; flex: 1; }
-.field.is-valid input { border-color: var(--trust); }
+.phone:focus-within { border-color: var(--focus); box-shadow: 0 0 0 3px rgba(29,78,216,.25); }
+.phone__pre {
+  display: flex; align-items: center; gap: 8px; flex: none;
+  padding: 0 12px 0 14px; border-right: 1px solid var(--line);
+  font: 600 20px/1 var(--font); color: var(--text); user-select: none;
+}
+.phone__flag {
+  width: 24px; height: 17px; border-radius: 3px; flex: none;
+  background: linear-gradient(90deg, #009246 0 33.4%, #fff 33.4% 66.6%, #ce2b37 66.6% 100%);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.15);
+}
+.field .phone input[type="tel"] {
+  flex: 1; min-width: 0; min-height: 0; border: 0; border-radius: 0; background: transparent;
+  padding: 12px 14px; letter-spacing: .02em;
+}
+.field .phone input[type="tel"]:focus { outline: none; border: 0; }
+.field .phone input[type="tel"][aria-invalid="true"] { background: transparent; }
+.field.is-invalid .phone { border-color: var(--err); background: var(--err-bg); }
+.field.is-invalid .phone__pre { border-right-color: #f1b7b1; }
+.field.is-valid .phone { border-color: var(--trust); }
+.field.is-valid .phone::after {
+  content: "✓"; display: flex; align-items: center; padding-right: 14px;
+  color: var(--trust); font-weight: 800; font-size: 20px;
+}
+.field.is-valid #f-name, .field.is-valid input[type="text"] { border-color: var(--trust); }

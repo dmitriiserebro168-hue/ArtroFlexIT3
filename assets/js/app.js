@@ -376,6 +376,8 @@
     function setErr(input, errEl, show) {
       errEl.hidden = !show;
       input.setAttribute('aria-invalid', show ? 'true' : 'false');
+      var fld = input.closest('.field');
+      if (fld) { fld.classList.toggle('is-invalid', show); if (show) fld.classList.remove('is-valid'); }
     }
     var nameErr = $('#f-name-err'), phoneErr = $('#f-phone-err');
     var phoneField = phone.closest('.field');
