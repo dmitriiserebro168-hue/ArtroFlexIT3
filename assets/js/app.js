@@ -1,0 +1,487 @@
+(function () {
+  'use strict';
+
+  var cfg = window.LANDING_CONFIG || {};
+  var claims = cfg.approvedClaims || {};
+  var isDraft = cfg.mode !== 'production';
+  var isDemo = !!cfg.demo || location.protocol === 'file:';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+  function store(kind) {
+    try { return window[kind]; } catch (e) { return null; }
+  }
+  function storeGet(kind, k) { try { var s = store(kind); return s ? s.getItem(k) : null; } catch (e) { return null; } }
+  function storeSet(kind, k, v) { try { var s = store(kind); if (s) s.setItem(k, v); } catch (e) { /* приватный режим */ } }
+
+  /* ---------- Аналитика (без персональных данных) ---------- */
+  window.dataLayer = window.dataLayer || [];
+  function track(name, params) {
+    var data = { event: name };
+    for (var k in params || {}) data[k] = params[k];
+    window.dataLayer.push(data);
+    if (window.fbq && name === 'lead_accepted') {
+      // Заявка = Lead, никогда не Purchase. eventID — для дедупликации с Conversions API.
+      window.fbq('track', 'Lead', { content_name: cfg.offerId }, { eventID: params.lead_id });
+    }
+  }
+
+  function loadPixel(id) {
+    /* eslint-disable */
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    /* eslint-enable */
+    window.fbq('init', id);
+    window.fbq('track', 'PageView');
+  }
+
+  function initCookies() {
+    var a = cfg.analytics || {};
+    if (!a.metaPixelId || isDemo) return;
+    if (!a.requireCookieConsent) { loadPixel(a.metaPixelId); return; }
+    var choice = storeGet('localStorage', 'cookie_consent');
+    if (choice === 'accept') { loadPixel(a.metaPixelId); return; }
+    if (choice === 'deny') return;
+    var box = $('#cookie');
+    box.hidden = false;
+    $$('[data-cookie]', box).forEach(function (b) {
+      b.addEventListener('click', function () {
+        var v = b.getAttribute('data-cookie');
+        storeSet('localStorage', 'cookie_consent', v);
+        box.hidden = true;
+        if (v === 'accept') loadPixel(a.metaPixelId);
+      });
+    });
+  }
+
+  /* ---------- UTM и рекламные параметры ---------- */
+  var TRACK_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+    'campaign_id', 'adset_id', 'ad_id', 'fbclid'];
+  function captureParams() {
+    var q = new URLSearchParams(location.search);
+    var saved = {};
+    try { saved = JSON.parse(storeGet('sessionStorage', 'lp_params') || '{}') || {}; } catch (e) { saved = {}; }
+    TRACK_PARAMS.forEach(function (p) {
+      var v = q.get(p);
+      if (v) saved[p] = v.slice(0, 200);
+    });
+    storeSet('sessionStorage', 'lp_params', JSON.stringify(saved));
+    return saved;
+  }
+
+  /* ---------- Тексты и утверждения ---------- */
+  function applyTexts() {
+    var t = cfg.text || {};
+    $$('[data-t]').forEach(function (el) {
+      var v = t[el.getAttribute('data-t')];
+      if (v != null && v !== '') el.textContent = v;
+      if (el.classList.contains('ph') && v && v.indexOf('[') === -1) el.classList.remove('ph');
+    });
+    if (t.productName) document.title = t.productName + ' – Informazioni e offerta in Italia';
+  }
+
+  function applyClaims() {
+    document.documentElement.classList.toggle('mode-draft', isDraft);
+    $$('[data-claim]').forEach(function (el) {
+      var ok = !!claims[el.getAttribute('data-claim')];
+      if (ok || isDraft) {
+        el.classList.add('claim-on');
+        if (!ok) el.classList.add('claim-draft');
+      }
+    });
+    $$('[data-claim-alt]').forEach(function (el) {
+      var ok = !!claims[el.getAttribute('data-claim-alt')];
+      if (ok || isDraft) el.classList.add('claim-off');
+    });
+  }
+
+  /* ---------- Цены ---------- */
+  var eur = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
+  function fmt(v) { return typeof v === 'number' ? eur.format(v) : '€ —'; }
+
+  function applyPrices(expired) {
+    var p = cfg.price || {};
+    var current = expired ? p.afterExpiry : p.current;
+    var parts = [current, p.shipping, p.extraFees];
+    var total = typeof current === 'number'
+      ? parts.reduce(function (s, v) { return s + (typeof v === 'number' ? v : 0); }, 0)
+      : null;
+    var values = {
+      old: fmt(p.old),
+      current: fmt(current),
+      shipping: p.shipping === 0 ? 'Gratuita' : fmt(p.shipping),
+      extraFees: fmt(p.extraFees),
+      total: fmt(total),
+      discountPercent: String(p.discountPercent != null ? p.discountPercent : '')
+    };
+    $$('[data-price]').forEach(function (el) {
+      el.textContent = values[el.getAttribute('data-price')];
+    });
+    $$('[data-extra-fees]').forEach(function (el) { el.hidden = typeof p.extraFees !== 'number'; });
+
+    if (typeof p.old === 'number' && typeof p.current === 'number' && p.discountPercent) {
+      var real = Math.round((1 - p.current / p.old) * 100);
+      if (real !== p.discountPercent) {
+        console.warn('[landing] discountPercent=' + p.discountPercent + '%, фактическая скидка ' + real + '%');
+      }
+    }
+    // После окончания акции без новой цены — скрываем строки цен целиком
+    if (expired && typeof current !== 'number') {
+      $$('.price-box__now, .price-box__lines, .final__price').forEach(function (el) { el.hidden = true; });
+    }
+  }
+
+  /* ---------- Таймер и остаток ---------- */
+  var clockOffset = 0; // серверное время − локальное
+  function setPromoState(expired) {
+    $$('[data-offer-promo]').forEach(function (el) { el.classList.toggle('promo-off', expired); });
+    $$('[data-offer-ended]').forEach(function (el) { el.hidden = !expired; });
+    applyPrices(expired);
+  }
+
+  function startTimer(endsAt) {
+    var end = new Date(endsAt).getTime();
+    if (isNaN(end)) return;
+    var dateFmt = new Intl.DateTimeFormat('it-IT', {
+      timeZone: 'Europe/Rome', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
+    });
+    $$('[data-offer-end-date]').forEach(function (el) { el.textContent = dateFmt.format(new Date(end)); });
+    var cells = {};
+    ['d', 'h', 'm', 's'].forEach(function (k) { cells[k] = $('[data-timer="' + k + '"]'); });
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    var timerId;
+    function tick() {
+      var left = Math.floor((end - (Date.now() + clockOffset)) / 1000);
+      if (left <= 0) {
+        clearInterval(timerId);
+        setPromoState(true);
+        return;
+      }
+      if (!cells.d) return;
+      cells.d.textContent = Math.floor(left / 86400);
+      cells.h.textContent = pad(Math.floor(left % 86400 / 3600));
+      cells.m.textContent = pad(Math.floor(left % 3600 / 60));
+      cells.s.textContent = pad(left % 60);
+    }
+    tick();
+    timerId = setInterval(tick, 1000);
+  }
+
+  // Персональная акция: начало фиксируется при первом заходе и не сбрасывается при повторных
+  var personalEnd = null;
+  function personalEndsAt(hours) {
+    var key = 'lp_offer_start_' + (cfg.offerId || 'default');
+    var start = parseInt(storeGet('localStorage', key), 10);
+    if (!start || isNaN(start)) {
+      start = Date.now() + clockOffset;
+      storeSet('localStorage', key, String(start));
+    }
+    personalEnd = new Date(start + hours * 3600 * 1000);
+    return personalEnd.toISOString();
+  }
+
+  function initOffer() {
+    var o = cfg.offer || {};
+    var hours = o.personalHours || 0;
+    var fallback = function () {
+      setStock(o.fallbackStock);
+      startTimer(hours ? personalEndsAt(hours) : o.fallbackEndsAt);
+    };
+    applyPrices(false);
+    if (isDemo || !cfg.form || !cfg.form.offerEndpoint || !window.fetch) { fallback(); return; }
+    fetch(cfg.form.offerEndpoint, { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) {
+        if (d.now) clockOffset = new Date(d.now).getTime() - Date.now();
+        setStock(d.stock != null ? d.stock : o.fallbackStock);
+        if (d.active === false) { setPromoState(true); return; }
+        startTimer(hours ? personalEndsAt(hours) : (d.ends_at || o.fallbackEndsAt));
+      })
+      .catch(fallback);
+  }
+
+  function setStock(n) {
+    $$('[data-offer-stock]').forEach(function (el) { el.textContent = n; });
+    if (n === 0) setPromoState(true);
+  }
+
+  /* ---------- Отзывы из редактора (admin/) ---------- */
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function safeUrl(u) { return /^(assets\/[\w./-]+|https:\/\/[^\s"'<>]+)$/.test(u || '') ? u : ''; }
+
+  function renderReviews(list) {
+    var track = $('[data-reviews-track]');
+    if (!track) return;
+    if (!list.length) {
+      // Нет опубликованных: в черновике остаются заглушки, в рабочем режиме блок скрывается
+      if (!isDraft) $('#reviews').hidden = true;
+      return;
+    }
+    track.innerHTML = list.map(function (r) {
+      var photo = safeUrl(r.photo), video = safeUrl(r.video), subs = safeUrl(r.subtitles);
+      var who = '<strong>' + esc(r.name) + '</strong>' + (r.age ? ', ' + esc(r.age) + ' anni' : '') + (r.city ? '<br>' + esc(r.city) : '');
+      return '<article class="review">' +
+        '<div class="review__head">' +
+          (photo ? '<img class="media review__photo" src="' + esc(photo) + '" width="84" height="84" loading="lazy" alt="' + esc(r.name) + '">' : '') +
+          '<p class="review__who">' + who + '</p>' +
+        '</div>' +
+        '<blockquote class="review__text">' + esc(r.text) + '</blockquote>' +
+        (video ? '<video class="review__video" controls preload="none" playsinline' + (photo ? ' poster="' + esc(photo) + '"' : '') + '>' +
+          '<source src="' + esc(video) + '" type="video/mp4">' +
+          (subs ? '<track kind="subtitles" srclang="it" label="Italiano" src="' + esc(subs) + '" default>' : '') +
+        '</video>' : '') +
+      '</article>';
+    }).join('');
+  }
+
+  function initReviews() {
+    var ep = cfg.form && cfg.form.reviewsEndpoint;
+    if (isDemo || !ep || !window.fetch) return Promise.resolve();
+    return fetch(ep).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) { renderReviews(d.reviews || []); })
+      .catch(function () { /* сервер недоступен — остаются отзывы из HTML */ });
+  }
+
+  /* ---------- Слайдер отзывов ---------- */
+  function initSlider() {
+    $$('[data-slider]').forEach(function (root) {
+      var track = $('.slider__track', root);
+      var prev = $('[data-slider-prev]', root);
+      var next = $('[data-slider-next]', root);
+      var count = $('[data-slider-count]', root);
+      var nav = $('.slider__nav', root);
+      var items = track.children;
+      function step() { return items[0] ? items[0].getBoundingClientRect().width + 16 : track.clientWidth; }
+      function update() {
+        var all = track.scrollWidth <= track.clientWidth + 4;
+        nav.hidden = all;
+        var i = Math.round(track.scrollLeft / step());
+        count.textContent = (i + 1) + ' / ' + items.length;
+        prev.disabled = track.scrollLeft < 4;
+        next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+      }
+      prev.addEventListener('click', function () { track.scrollBy({ left: -step() }); });
+      next.addEventListener('click', function () { track.scrollBy({ left: step() }); });
+      track.addEventListener('scroll', function () { window.requestAnimationFrame(update); }, { passive: true });
+      window.addEventListener('resize', update);
+      update();
+    });
+  }
+
+  /* ---------- Видео без звука: играет только на экране ---------- */
+  function initVideos() {
+    if (!('IntersectionObserver' in window)) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    $$('video[data-autoplay-visible]').forEach(function (v) {
+      v.muted = true;
+      new IntersectionObserver(function (en) {
+        if (en[0].isIntersecting) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+        else v.pause();
+      }, { threshold: 0.4 }).observe(v);
+    });
+  }
+
+  /* ---------- FAQ ---------- */
+  function initFaq() {
+    var btn = $('[data-faq-toggle]');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var open = btn.getAttribute('aria-pressed') !== 'true';
+      $$('.faq details').forEach(function (d) { d.open = open; });
+      btn.setAttribute('aria-pressed', String(open));
+      btn.textContent = open ? 'Nascondi le risposte' : 'Mostra tutte le risposte';
+    });
+  }
+
+  /* ---------- CTA и липкая кнопка ---------- */
+  function initCta() {
+    $$('[data-cta]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        track('cta_click', { position: a.getAttribute('data-cta') });
+        var target = $('#richiesta');
+        if (!target) return;
+        e.preventDefault();
+        target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+        history.replaceState(null, '', '#richiesta');
+        setTimeout(function () {
+          var f = $('#f-name');
+          if (f && !$('#form-card').hidden) f.focus({ preventScroll: true });
+        }, 500);
+      });
+    });
+
+    var sticky = $('#sticky-cta');
+    if (!sticky || !('IntersectionObserver' in window)) return;
+    var heroVisible = true, formVisible = false;
+    function update() { sticky.hidden = heroVisible || formVisible || done; }
+    new IntersectionObserver(function (en) { heroVisible = en[0].isIntersecting; update(); })
+      .observe($('.hero .btn--cta'));
+    new IntersectionObserver(function (en) { formVisible = en[0].isIntersecting; update(); }, { rootMargin: '0px 0px -20% 0px' })
+      .observe($('#richiesta'));
+    updateSticky = update;
+  }
+  var done = false;
+  var updateSticky = function () {};
+
+  /* ---------- Телефон ---------- */
+  // Возвращает +39XXXXXXXXX или null. Мобильные: 3 + 8–9 цифр; стационарные: 0 + 5–10 цифр.
+  function normalizePhone(raw) {
+    var s = String(raw || '').replace(/[\s.\-\/()]/g, '');
+    if (s.indexOf('+39') === 0) s = s.slice(3);
+    else if (s.indexOf('0039') === 0) s = s.slice(4);
+    else if (s.charAt(0) === '+') return null; // другой код страны
+    if (!/^\d+$/.test(s)) return null;
+    if (/^3\d{8,9}$/.test(s) || /^0\d{5,10}$/.test(s)) return '+39' + s;
+    return null;
+  }
+  var NAME_RE = /^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ '’.\-]{1,59}$/;
+
+  /* ---------- Форма ---------- */
+  function initForm(params) {
+    var form = $('#lead-form');
+    if (!form) return;
+    var name = $('#f-name'), phone = $('#f-phone'), consent = $('#f-consent');
+    var btn = $('#f-submit'), formErr = $('#form-error');
+    var requireConsent = !(cfg.form && cfg.form.requireConsent === false);
+    if (!requireConsent) $('[data-consent-field]').remove();
+
+    var started = false, busy = false, pending = null;
+
+    form.addEventListener('input', function () {
+      if (!started) { started = true; track('form_start'); }
+    });
+    phone.addEventListener('focus', function () {
+      if (!phone.value.trim()) phone.value = '+39 ';
+    });
+
+    function setErr(input, errEl, show) {
+      errEl.hidden = !show;
+      input.setAttribute('aria-invalid', show ? 'true' : 'false');
+    }
+    name.addEventListener('blur', function () { if (name.value) setErr(name, $('#f-name-err'), !NAME_RE.test(name.value.trim())); });
+    phone.addEventListener('blur', function () {
+      var v = phone.value.replace(/\s/g, '');
+      if (v && v !== '+39') setErr(phone, $('#f-phone-err'), !normalizePhone(phone.value));
+    });
+    name.addEventListener('input', function () { if (NAME_RE.test(name.value.trim())) setErr(name, $('#f-name-err'), false); });
+    phone.addEventListener('input', function () { if (normalizePhone(phone.value)) setErr(phone, $('#f-phone-err'), false); });
+    if (requireConsent) consent.addEventListener('change', function () { if (consent.checked) setErr(consent, $('#f-consent-err'), false); });
+
+    function uuid() {
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      });
+    }
+
+    function send(payload) {
+      if (isDemo) {
+        return new Promise(function (res, rej) {
+          setTimeout(function () {
+            if (/^errore$/i.test(payload.name)) rej(new Error('demo'));
+            else res({ ok: true, lead_id: 'demo-' + payload.request_id.slice(0, 8) });
+          }, 900);
+        });
+      }
+      var ctrl = window.AbortController ? new AbortController() : null;
+      var t = ctrl && setTimeout(function () { ctrl.abort(); }, (cfg.form && cfg.form.timeoutMs) || 15000);
+      return fetch(cfg.form.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: ctrl ? ctrl.signal : undefined,
+        credentials: 'same-origin'
+      }).then(function (r) {
+        if (t) clearTimeout(t);
+        return r.json().catch(function () { return {}; }).then(function (d) {
+          if (!r.ok || d.ok !== true || !d.lead_id) throw new Error(d.error || ('http_' + r.status));
+          return d;
+        });
+      }, function (e) { if (t) clearTimeout(t); throw e; });
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (busy) return; // защита от двойной отправки
+      formErr.hidden = true;
+
+      var n = name.value.trim().replace(/\s+/g, ' ');
+      var p = normalizePhone(phone.value);
+      var badName = !NAME_RE.test(n);
+      var badPhone = !p;
+      var badConsent = requireConsent && !consent.checked;
+      setErr(name, $('#f-name-err'), badName);
+      setErr(phone, $('#f-phone-err'), badPhone);
+      if (requireConsent) setErr(consent, $('#f-consent-err'), badConsent);
+      if (badName || badPhone || badConsent) {
+        (badName ? name : badPhone ? phone : consent).focus();
+        return;
+      }
+
+      // Один и тот же request_id для повторов с теми же данными → сервер не создаст дубль
+      var key = n + '|' + p;
+      if (!pending || pending.key !== key) pending = { key: key, id: uuid() };
+
+      var payload = {
+        request_id: pending.id,
+        name: n,
+        phone: p,
+        consent: requireConsent ? consent.checked : null,
+        privacy_version: cfg.form && cfg.form.privacyVersion,
+        offer_id: cfg.offerId,
+        landing_version: cfg.landingVersion,
+        // Чтобы оператор знал, действует ли персональная скидка для этого клиента
+        offer_expires_at: personalEnd ? personalEnd.toISOString() : null,
+        params: params,
+        website: $('#f-website').value
+      };
+
+      busy = true;
+      btn.setAttribute('aria-busy', 'true');
+      btn.disabled = true;
+      track('form_submit');
+
+      send(payload).then(function (d) {
+        track('lead_accepted', { lead_id: d.lead_id, duplicate: !!d.duplicate });
+        $('#success-phone').textContent = p.replace(/^\+39(\d{3})(\d{3})(\d+)$/, '+39 $1 $2 $3');
+        $('#form-card').hidden = true;
+        var s = $('#success');
+        s.hidden = false;
+        s.focus();
+        done = true;
+        updateSticky();
+      }).catch(function (err) {
+        track('lead_error', { reason: String(err && err.message || err).slice(0, 40) });
+        formErr.textContent = (err && err.message === 'rate_limited')
+          ? 'Troppe richieste in poco tempo. Riprova tra qualche minuto.'
+          : 'Non è stato possibile inviare la richiesta. Riprova.';
+        formErr.hidden = false;
+        formErr.scrollIntoView({ block: 'center' });
+      }).then(function () {
+        busy = false;
+        btn.removeAttribute('aria-busy');
+        btn.disabled = false;
+      });
+    });
+  }
+
+  /* ---------- Старт ---------- */
+  if (isDemo) $('#demo-banner').hidden = false;
+  applyTexts();
+  applyClaims();
+  initOffer();
+  initReviews().then(initSlider);
+  initVideos();
+  initFaq();
+  initCta();
+  initForm(captureParams());
+  initCookies();
+  track('page_view', { landing_version: cfg.landingVersion });
+})();

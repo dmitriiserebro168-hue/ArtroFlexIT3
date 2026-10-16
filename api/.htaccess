@@ -1,0 +1,4 @@
+# Закрыть прямой доступ к конфигурации
+<FilesMatch "^config(\.sample)?\.php$">
+  Require all denied
+</FilesMatch>

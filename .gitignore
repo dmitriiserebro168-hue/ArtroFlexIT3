@@ -1,0 +1,14 @@
+# Секреты и служебные данные сервера
+api/config.php
+_data/logs/
+_data/rate/
+_data/requests/
+_data/phones/
+_data/*.tmp
+
+# Загруженные через редактор фото отзывов (живут на сервере)
+assets/img/reviews/*
+!assets/img/reviews/.htaccess
+
+# Локальный предпросмотр
+.claude/
