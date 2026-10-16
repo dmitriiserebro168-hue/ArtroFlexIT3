@@ -500,3 +500,20 @@ img.review__photo { width: 52px; height: 52px; padding: 0; border-radius: 50%; o
 @media (min-width: 640px) { .slider__track { grid-auto-columns: calc((100% - 16px) / 2); } }
 @media (min-width: 1024px) { .slider__track { grid-auto-columns: calc((100% - 32px) / 3); } }
 @media (prefers-reduced-motion: reduce) { .slider__track { scroll-behavior: auto; } }
+
+/* ---------- Отзывы на телефоне: список вместо карусели, чтобы их точно увидели ---------- */
+.reviews-more { display: none; }
+@media (max-width: 639px) {
+  .slider__track {
+    grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: 1fr;
+    overflow: visible; scroll-snap-type: none; padding: 0;
+  }
+  .slider__nav { display: none !important; }
+  .slider:not(.is-expanded) .review:nth-child(n+4) { display: none; }
+  .reviews-more {
+    display: flex; width: 100%; margin-top: 16px; min-height: 56px;
+    background: #fff; color: var(--trust); border: 2px solid var(--trust);
+  }
+  .reviews-more:hover { background: var(--trust-bg); }
+  .reviews-more[hidden] { display: none !important; }
+}

@@ -266,6 +266,22 @@
       var items = Array.prototype.slice.call(track.children);
       var dots = [];
 
+      // На телефоне отзывы идут списком: первые 3 видны сразу, остальные — по кнопке
+      var SHOW_FIRST = 3;
+      if (items.length > SHOW_FIRST) {
+        var more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'btn reviews-more';
+        more.textContent = 'Mostra altre ' + (items.length - SHOW_FIRST) + ' recensioni';
+        more.addEventListener('click', function () {
+          root.classList.add('is-expanded');
+          more.hidden = true;
+          if (items[SHOW_FIRST]) items[SHOW_FIRST].setAttribute('tabindex', '-1'), items[SHOW_FIRST].focus({ preventScroll: true });
+          track.dispatchEvent(new Event('scroll'));
+        });
+        root.appendChild(more);
+      }
+
       function gap() { return parseFloat(getComputedStyle(track).columnGap) || 16; }
       function stepW() { return items[0] ? items[0].getBoundingClientRect().width + gap() : track.clientWidth; }
       function perView() { return Math.max(1, Math.round((track.clientWidth + gap()) / stepW())); }
