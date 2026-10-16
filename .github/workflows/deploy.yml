@@ -1,0 +1,74 @@
+# Выкладка на it3.artro-flex.com при каждом push в main (и вручную: Actions → Deploy → Run workflow).
+# Секреты задаются в Settings → Secrets and variables → Actions. Список — в README, раздел «Выкладка».
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-it3
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Проверка синтаксиса PHP
+        run: for f in api/*.php; do php -l "$f"; done
+
+      - name: Проверка секретов
+        env:
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          LEAD_HASH_SALT: ${{ secrets.LEAD_HASH_SALT }}
+          PARTNER_URL: ${{ secrets.PARTNER_URL }}
+        run: |
+          missing=0
+          for s in FTP_PASSWORD ADMIN_PASSWORD LEAD_HASH_SALT; do
+            if [ -z "${!s}" ]; then echo "::error::Не задан секрет $s"; missing=1; fi
+          done
+          if [ -z "$PARTNER_URL" ]; then echo "::warning::Не задан PARTNER_URL — форма не сможет передавать заявки партнёру"; fi
+          exit $missing
+
+      - name: Создание api/secrets.php
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          LEAD_HASH_SALT: ${{ secrets.LEAD_HASH_SALT }}
+          PARTNER_URL: ${{ secrets.PARTNER_URL }}
+          PARTNER_API_KEY: ${{ secrets.PARTNER_API_KEY }}
+        run: |
+          php -r '$a = []; foreach (["ADMIN_PASSWORD","LEAD_HASH_SALT","PARTNER_URL","PARTNER_API_KEY"] as $k) { $a[$k] = (string)getenv($k); }
+                  file_put_contents("api/secrets.php", "<?php\n// Создано GitHub Actions. Не редактировать на сервере.\nreturn " . var_export($a, true) . ";\n");'
+          php -l api/secrets.php
+
+      - name: Загрузка по FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ vars.FTP_SERVER || 'ftp.artro-flex.com' }}
+          username: ${{ secrets.FTP_USERNAME || 'it3.artroflex@it3.artro-flex.com' }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+          protocol: ftps
+          server-dir: ${{ vars.FTP_SERVER_DIR || './' }}
+          # Не выкладываем внутренние файлы и не трогаем данные, которые живут на сервере
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            docs/**
+            README.md
+            _data/reviews.json
+            _data/logs/**
+            _data/rate/**
+            _data/requests/**
+            _data/phones/**
+            assets/img/reviews/*.jpg
+            assets/img/reviews/*.png
+            assets/img/reviews/*.webp

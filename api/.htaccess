@@ -1,4 +1,4 @@
-# Закрыть прямой доступ к конфигурации
-<FilesMatch "^config(\.sample)?\.php$">
+# Закрыть прямой доступ к настройкам и секретам
+<FilesMatch "^(config|secrets)\.php$">
   Require all denied
 </FilesMatch>

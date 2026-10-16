@@ -1,24 +1,34 @@
 <?php
 /*
- * Скопировать в api/config.php и заполнить. config.php не публиковать в репозиторий.
- * Секреты лучше задавать переменными окружения (SetEnv в .htaccess / панель хостинга).
+ * Настройки сервера. Файл хранится в git, секретов в нём нет.
+ * Секреты (пароли, ключи) берутся из api/secrets.php — его создаёт GitHub Actions
+ * из секретов репозитория при каждой выкладке. Локально можно создать его вручную.
  */
+return (function (): array {
+$secret = is_file(__DIR__ . '/secrets.php') ? require __DIR__ . '/secrets.php' : [];
+$env = function (string $key, string $default = '') use ($secret): string {
+    $v = (string)($secret[$key] ?? '');
+    if ($v !== '') return $v;
+    $e = getenv($key);
+    return $e !== false && $e !== '' ? $e : $default;
+};
+
 return [
-    // ---------- Акция (единственный рабочий источник для таймера и остатка) ----------
+    // ---------- Акция (общая дата; при offer.personalHours > 0 в config.js таймер персональный) ----------
     'offer' => [
         'active'          => true,
         'ends_at'         => '2026-10-31 23:59:59',   // время Europe/Rome
-        'stock'           => 17,                      // актуальный остаток по акционной цене
-        'stock_updated_at'=> '2026-10-16',            // дата последней сверки остатка с партнёром
+        'stock'           => 17,                      // остаток по акционной цене
+        'stock_updated_at'=> '2026-10-16',            // дата последней сверки остатка
     ],
 
     // ---------- Партнёрская программа ----------
     'partner' => [
-        'url'          => getenv('PARTNER_URL') ?: 'https://partner.example/api/leads',
+        'url'          => $env('PARTNER_URL', 'https://partner.example/api/leads'),
         'method'       => 'POST',
         'format'       => 'json',                     // 'json' или 'form'
         'auth_header'  => 'Authorization',            // заголовок авторизации
-        'auth_value'   => 'Bearer ' . (getenv('PARTNER_API_KEY') ?: ''),
+        'auth_value'   => 'Bearer ' . $env('PARTNER_API_KEY'),
         'timeout'      => 8,                          // секунд на попытку
         'retries'      => 2,                          // повторов при 5xx / таймауте
         // Как называются поля у партнёра: наш ключ => ключ партнёра.
@@ -52,18 +62,19 @@ return [
     ],
 
     // ---------- Защита ----------
-    'allowed_origins' => ['https://example.it'],       // домен лендинга; пусто — не проверять
+    'allowed_origins' => ['https://it3.artro-flex.com', 'https://www.it3.artro-flex.com'],
     'require_consent' => true,                         // должно совпадать с form.requireConsent в config.js
     'rate_limit'      => ['max' => 5, 'window' => 600],// не более 5 заявок с IP за 10 минут
     'dedupe_hours'    => 24,                           // повтор того же телефона в течение N часов не отправляется партнёру
-    'hash_salt'       => getenv('LEAD_HASH_SALT') ?: 'заменить-на-случайную-строку',
+    'hash_salt'       => $env('LEAD_HASH_SALT', 'artroflex-it3-fallback-salt'),
 
-    // Каталог для служебных файлов. Лучше вне корня сайта.
+    // Каталог для служебных файлов
     'data_dir'        => __DIR__ . '/../_data',
 
-    // Пароль страницы редактирования отзывов (admin/). Лучше задать переменной окружения ADMIN_PASSWORD.
-    'admin_password'  => getenv('ADMIN_PASSWORD') ?: '', // задать в api/config.php или ADMIN_PASSWORD; пусто — вход закрыт
+    // Пароль редактора отзывов (admin/). Пусто — вход закрыт.
+    'admin_password'  => $env('ADMIN_PASSWORD'),
 
     // Срок хранения служебных записей (дней). Имена и телефоны на диске не хранятся.
     'retention_days'  => 30,
 ];
+})();

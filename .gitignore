@@ -1,5 +1,5 @@
 # Секреты и служебные данные сервера
-api/config.php
+api/secrets.php
 _data/logs/
 _data/rate/
 _data/requests/
