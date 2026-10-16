@@ -77,7 +77,8 @@ session_set_cookie_params([
     'samesite' => 'Strict',
 ]);
 session_start();
-$logged = !empty($_SESSION['admin']) && ($_SESSION['exp'] ?? 0) > time();
+// Вход отдельный для каждого редактора: отзывы — admin_password, специалисты — experts_password
+$logged = !empty($_SESSION['areas'][$coll]) && ($_SESSION['exp'] ?? 0) > time();
 if ($logged) $_SESSION['exp'] = time() + 3600 * 4; // 4 часа бездействия
 if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16));
 
@@ -140,7 +141,10 @@ if ($action === 'login') {
     $hits = is_file($rf) ? (json_decode((string)file_get_contents($rf), true) ?: []) : [];
     $hits = array_values(array_filter($hits, fn($t) => $t > $now - 900));
     if (count($hits) >= 5) out(429, ['ok' => false, 'error' => 'rate_limited']); // 5 попыток за 15 минут
-    $expected = (string)($cfg['admin_password'] ?? '');
+    $area = ((string)($in['area'] ?? $coll)) === 'experts' ? 'experts' : 'reviews';
+    $expected = $area === 'experts'
+        ? ((string)($cfg['experts_password'] ?? '') !== '' ? (string)$cfg['experts_password'] : (string)($cfg['admin_password'] ?? ''))
+        : (string)($cfg['admin_password'] ?? '');
     if ($expected === '' || !hash_equals($expected, (string)($in['password'] ?? ''))) {
         $hits[] = $now;
         @file_put_contents($rf, json_encode($hits), LOCK_EX);
@@ -148,7 +152,7 @@ if ($action === 'login') {
         out(401, ['ok' => false, 'error' => 'wrong_password']);
     }
     session_regenerate_id(true);
-    $_SESSION['admin'] = true;
+    $_SESSION['areas'] = array_merge((array)($_SESSION['areas'] ?? []), [$area => true]);
     $_SESSION['exp'] = $now + 3600 * 4;
     $_SESSION['csrf'] = bin2hex(random_bytes(16));
     out(200, ['ok' => true, 'csrf' => $_SESSION['csrf']]);
@@ -156,8 +160,8 @@ if ($action === 'login') {
 
 if ($action === 'logout') {
     require_auth($logged);
-    $_SESSION = [];
-    session_destroy();
+    unset($_SESSION['areas'][$coll]);
+    if (empty($_SESSION['areas'])) session_destroy();
     out(200, ['ok' => true]);
 }
 

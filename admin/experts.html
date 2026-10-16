@@ -260,7 +260,7 @@
     e.preventDefault();
     var err = $('#login-err');
     err.hidden = true;
-    api('POST', { action: 'login', password: $('#pw').value }).then(function (d) {
+    api('POST', { action: 'login', area: COLL, collection: COLL, password: $('#pw').value }).then(function (d) {
       csrf = d.csrf;
       $('#pw').value = '';
       showEditor();
@@ -296,7 +296,7 @@
 
   $('#logout').addEventListener('click', function () {
     if (dirty && !confirm('Есть несохранённые изменения. Выйти без сохранения?')) return;
-    api('POST', { action: 'logout' }).catch(function () {}).then(function () {
+    api('POST', { action: 'logout', collection: COLL }).catch(function () {}).then(function () {
       csrf = null; dirty = false; reviews = [];
       showLogin();
     });

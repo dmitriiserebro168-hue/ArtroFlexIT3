@@ -256,7 +256,7 @@
     e.preventDefault();
     var err = $('#login-err');
     err.hidden = true;
-    api('POST', { action: 'login', password: $('#pw').value }).then(function (d) {
+    api('POST', { action: 'login', area: 'reviews', collection: 'reviews', password: $('#pw').value }).then(function (d) {
       csrf = d.csrf;
       $('#pw').value = '';
       showEditor();

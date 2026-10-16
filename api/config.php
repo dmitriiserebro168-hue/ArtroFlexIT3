@@ -75,6 +75,9 @@ return (function (): array {
         // Пароль дашборда /admin/stats.php (пусто — используется пароль редактора отзывов)
         'stats_password'  => $s('stats_password', $s('admin_password')),
 
+        // Пароль редактора мнений специалистов (admin/experts.html). Пусто — используется пароль редактора отзывов.
+        'experts_password'=> $s('experts_password'),
+
         // Пароль редактора отзывов (admin/). Пусто — вход закрыт.
         'admin_password'  => $s('admin_password'),
 

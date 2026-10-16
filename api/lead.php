@@ -147,6 +147,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && ($_GET['health'] ?? '') === 
         'token_set'         => (string)($cfg['partner']['static']['token'] ?? '') !== '',
         'offer_id'          => (string)($cfg['partner']['static']['offer_id'] ?? ''),
         'admin_password_set'=> (string)($cfg['admin_password'] ?? '') !== '',
+        'experts_password_set'=> (string)($cfg['experts_password'] ?? '') !== '',
         'curl'              => function_exists('curl_init'),
         'data_writable'     => is_writable($dataDir),
         'partner_reachable' => $reach,

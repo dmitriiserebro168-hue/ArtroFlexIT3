@@ -6,6 +6,7 @@ return array(
     'token'          => 'ВАШ_ТОКЕН_WEBVORK',
     'offer_id'       => '208',                 // оффер Webvork; 208 — как у it2, уточните для it3
     'admin_password' => 'ПАРОЛЬ_РЕДАКТОРА_ОТЗЫВОВ',
+    'experts_password' => 'ПАРОЛЬ_РЕДАКТОРА_СПЕЦИАЛИСТОВ',   // /admin/experts.html; пусто — пароль редактора отзывов
 
     // Журнал заявок и статистика посещений в MySQL (как у it2). Базу и пользователя
     // создать в cPanel → MySQL Database Wizard и дать пользователю ALL PRIVILEGES на базу.
