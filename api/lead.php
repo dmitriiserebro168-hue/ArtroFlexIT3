@@ -149,6 +149,7 @@ $lead = [
     'utm_content'     => $clean($params['utm_content'] ?? null),
     'utm_term'        => $clean($params['utm_term'] ?? null),
     'country'         => 'IT',
+    'ip'              => $ip,
     'consent'         => ($in['consent'] ?? null) === true,
     'consent_at'      => $createdAt,
     'privacy_version' => $clean($in['privacy_version'] ?? null),
@@ -156,12 +157,16 @@ $lead = [
 ];
 
 $payload = $cfg['partner']['static'];
+if (array_key_exists('token', $payload) && (string)$payload['token'] === '') {
+    log_event($dataDir, 'error', 'no_partner_token');
+    out(500, ['ok' => false, 'error' => 'not_configured']);
+}
 foreach ($cfg['partner']['map'] as $ours => $theirs) {
     if ($theirs !== null && $theirs !== '' && array_key_exists($ours, $lead)) $payload[$theirs] = $lead[$ours];
 }
 
 // ---------- Отправка партнёру с повтором при временной ошибке ----------
-function partner_send(array $p, array $payload, string $leadId): array
+function partner_send(array $p, string $url, array $payload, string $leadId): array
 {
     $isJson = $p['format'] === 'json';
     $body = $isJson ? json_encode($payload, JSON_UNESCAPED_UNICODE) : http_build_query($payload);
@@ -173,7 +178,7 @@ function partner_send(array $p, array $payload, string $leadId): array
     if (!empty($p['auth_header']) && trim((string)$p['auth_value']) !== 'Bearer') {
         $headers[] = $p['auth_header'] . ': ' . $p['auth_value'];
     }
-    $ch = curl_init($p['url']);
+    $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_CUSTOMREQUEST  => $p['method'],
         CURLOPT_POSTFIELDS     => $body,
@@ -196,20 +201,28 @@ $accepted = false;
 $attempts = 0;
 $lastCode = 0;
 $lastErr = '';
+$urls = array_values(array_filter([$p['url'], $p['fallback_url'] ?? '']));
+$resp = '';
+$done = false;
 do {
     $attempts++;
-    [$lastCode, $resp, $lastErr] = partner_send($p, $payload, $leadId);
-    $temporary = $lastCode === 0 || $lastCode === 429 || $lastCode >= 500;
-    if ($lastCode >= 200 && $lastCode < 300) {
-        $accepted = true;
-        if (!empty($p['success_check'])) {
-            $j = json_decode($resp, true);
-            $accepted = is_array($j) && ($j[$p['success_check']['field']] ?? null) == $p['success_check']['value'];
+    // Основной адрес, при сетевой/5xx ошибке — запасной (как в it2)
+    foreach ($urls as $url) {
+        [$lastCode, $resp, $lastErr] = partner_send($p, $url, $payload, $leadId);
+        $temporary = $lastCode === 0 || $lastCode === 429 || $lastCode >= 500;
+        if ($lastCode >= 200 && $lastCode < 300) {
+            $accepted = true;
+            if (!empty($p['success_check'])) {
+                $j = json_decode($resp, true);
+                $accepted = is_array($j) && ($j[$p['success_check']['field']] ?? null) == $p['success_check']['value'];
+            }
+            $done = true;
+            break;
         }
-        break;
+        if (!$temporary) { $done = true; break; }
     }
-    if (!$temporary) break;
-    if ($attempts <= $p['retries']) usleep(400000 * $attempts);
+    if ($done) break;
+    if ($attempts <= $p['retries']) sleep(2);
 } while ($attempts <= $p['retries']);
 
 if (!$accepted) {

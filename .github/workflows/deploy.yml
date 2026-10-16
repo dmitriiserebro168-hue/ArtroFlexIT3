@@ -1,5 +1,18 @@
-# Выкладка на it3.artro-flex.com при каждом push в main (и вручную: Actions → Deploy → Run workflow).
-# Секреты задаются в Settings → Secrets and variables → Actions. Список — в README, раздел «Выкладка».
+# Выкладка лендинга на it3.artro-flex.com по FTPS при каждом push в main (и вручную: Actions → Deploy → Run workflow).
+# Загружаются только изменённые файлы (состояние хранится на сервере в .ftp-deploy-sync-state.json).
+# Схема та же, что у ArtroFlexIT2.
+#
+# Секреты репозитория (Settings → Secrets and variables → Actions → Secrets):
+#   FTP_SERVER    — ftp.artro-flex.com
+#   FTP_USERNAME  — it3.artroflex@it3.artro-flex.com
+#   FTP_PASSWORD  — пароль этого FTP-аккаунта
+# Переменная (вкладка Variables, необязательно):
+#   FTP_SERVER_DIR — папка сайта относительно корня FTP-аккаунта.
+#                    FTP-аккаунт it3 смотрит прямо в /home/artrofle/it3.artro-flex — оставьте пустой (будет ./).
+#
+# Токен Webvork, пароль редактора отзывов и соль — НЕ в GitHub, а в /home/artrofle/artroflex3-config.php
+# (уровнем выше папки сайта, загружается один раз вручную). Образец — config.example.php.
+
 name: Deploy
 
 on:
@@ -18,52 +31,32 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Проверка синтаксиса PHP
         run: for f in api/*.php; do php -l "$f"; done
 
-      - name: Проверка секретов
-        env:
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-          LEAD_HASH_SALT: ${{ secrets.LEAD_HASH_SALT }}
-          PARTNER_URL: ${{ secrets.PARTNER_URL }}
-        run: |
-          missing=0
-          for s in FTP_PASSWORD ADMIN_PASSWORD LEAD_HASH_SALT; do
-            if [ -z "${!s}" ]; then echo "::error::Не задан секрет $s"; missing=1; fi
-          done
-          if [ -z "$PARTNER_URL" ]; then echo "::warning::Не задан PARTNER_URL — форма не сможет передавать заявки партнёру"; fi
-          exit $missing
-
-      - name: Создание api/secrets.php
-        env:
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-          LEAD_HASH_SALT: ${{ secrets.LEAD_HASH_SALT }}
-          PARTNER_URL: ${{ secrets.PARTNER_URL }}
-          PARTNER_API_KEY: ${{ secrets.PARTNER_API_KEY }}
-        run: |
-          php -r '$a = []; foreach (["ADMIN_PASSWORD","LEAD_HASH_SALT","PARTNER_URL","PARTNER_API_KEY"] as $k) { $a[$k] = (string)getenv($k); }
-                  file_put_contents("api/secrets.php", "<?php\n// Создано GitHub Actions. Не редактировать на сервере.\nreturn " . var_export($a, true) . ";\n");'
-          php -l api/secrets.php
-
-      - name: Загрузка по FTPS
+      - name: Upload via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ vars.FTP_SERVER || 'ftp.artro-flex.com' }}
+          server: ${{ secrets.FTP_SERVER || 'ftp.artro-flex.com' }}
           username: ${{ secrets.FTP_USERNAME || 'it3.artroflex@it3.artro-flex.com' }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
           protocol: ftps
+          port: 21
           server-dir: ${{ vars.FTP_SERVER_DIR || './' }}
           # Не выкладываем внутренние файлы и не трогаем данные, которые живут на сервере
           exclude: |
             **/.git*
             **/.git*/**
             .github/**
+            .claude/**
             docs/**
             README.md
+            config.example.php
+            artroflex3-config.php
+            api/secrets.php
             _data/reviews.json
             _data/logs/**
             _data/rate/**

@@ -12,7 +12,7 @@ window.LANDING_CONFIG = {
   mode: "draft",
 
   landingVersion: "tsl-it-1.0",
-  offerId: "[OFFER_ID]",
+  offerId: "208",
 
   // Тексты, подставляемые в элементы data-t="..."
   text: {
@@ -78,7 +78,7 @@ window.LANDING_CONFIG = {
     endpoint: "api/lead.php",
     offerEndpoint: "api/offer.php",
     reviewsEndpoint: "api/reviews.php?scope=public",
-    timeoutMs: 15000,
+    timeoutMs: 40000,   // сервер пробует 2 адреса Webvork дважды
     // Обязательный чекбокс согласия на звонок и передачу данных партнёру.
     // Отключать только если юрист определил иное правовое основание.
     requireConsent: true,

@@ -14,7 +14,7 @@
 | `assets/js/app.js` | Логика: утверждения, цены, таймер, слайдер, FAQ, форма, аналитика, cookie |
 | `api/lead.php` | Приём заявки → валидация → партнёр (сервер-сервер) |
 | `api/offer.php` | Серверное время, дата окончания акции, остаток |
-| `api/config.php` | Серверные настройки (в git, без секретов); секреты — в `api/secrets.php`, его создаёт GitHub Actions |
+| `api/config.php` | Серверные настройки (в git, без секретов); секреты — в `/home/artrofle/artroflex3-config.php` |
 | `privacy.html`, `termini.html` | Черновики юридических страниц — **на согласование юристу** |
 | `docs/claims.md` | Карточки согласования рекламных утверждений (раздел 14) |
 
@@ -30,7 +30,7 @@
 
 1. Залить все файлы в корень сайта.
 2. В `api/config.php` указать формат API партнёра: соответствие полей (`map`), постоянные поля (`static`), домен в `allowed_origins`.
-3. Секреты (`PARTNER_URL`, `PARTNER_API_KEY`, `LEAD_HASH_SALT`, `ADMIN_PASSWORD`) — в секретах GitHub, см. раздел «Выкладка».
+3. Секреты (токен Webvork, пароль редактора, соль) — в `/home/artrofle/artroflex3-config.php`, см. раздел «Выкладка».
 4. Каталог `_data` (служебные файлы, логи) — доступен PHP на запись, закрыт от веба (`.htaccess` уже есть; на nginx — `location /_data { deny all; }` и то же для `api/config.php`). Лучше вынести вне корня сайта через `data_dir`.
 5. В `config.js`: `mode: "production"`, `offerId`, тексты, цены, `analytics.metaPixelId`.
 6. Отправить тестовую заявку и проверить, что она появилась у партнёра (критерий приёмки).
@@ -82,32 +82,31 @@ Valid lead / Sale / Paid order / Return — по постбэкам партнё
 
 ## Редактор отзывов
 
-Адрес: `/admin/` (например `https://ваш-домен/admin/`). Пароль — секрет `ADMIN_PASSWORD` в GitHub (в репозитории его нет; пока не задан — вход закрыт). Пароль проверяется на сервере, 5 неверных попыток — блок на 15 минут, сессия живёт 4 часа.
+Адрес: `/admin/` (например `https://ваш-домен/admin/`). Пароль — `admin_password` в `/home/artrofle/artroflex3-config.php` (в репозитории его нет; пока не задан — вход закрыт). Пароль проверяется на сервере, 5 неверных попыток — блок на 15 минут, сессия живёт 4 часа.
 
 - Добавление, удаление, порядок (↑ ↓), имя, возраст, город, текст, фото (загрузка до 3 МБ в `assets/img/reviews/`), видео mp4 и итальянские субтитры .vtt.
 - На лендинге показываются только отзывы с отметками «Согласие автора получено» и «Опубликован». Без согласия опубликовать нельзя.
 - Отзывы хранятся в `_data/reviews.json`. Сейчас там 10 пустых ячеек «Esempio N», ни одна не опубликована.
 - Если опубликованных отзывов нет: в режиме `draft` видны заглушки из HTML, в `production` блок отзывов скрывается.
 
-## Выкладка на хостинг (it3.artro-flex.com) через GitHub
+## Выкладка на хостинг (it3.artro-flex.com) через GitHub — схема как у ArtroFlexIT2
 
-Каждый push в `main` выкладывает сайт по FTPS: GitHub Actions → workflow «Deploy» (`.github/workflows/deploy.yml`). Можно запустить и вручную: вкладка **Actions → Deploy → Run workflow**.
+Каждый push в `main` выкладывает сайт по FTPS (`.github/workflows/deploy.yml`, загружаются только изменённые файлы). Вручную: **Actions → Deploy → Run workflow**.
 
-Что делает workflow: проверяет синтаксис PHP, создаёт `api/secrets.php` из секретов репозитория и загружает изменившиеся файлы. `docs/`, `README.md`, `.github/` на сервер не попадают. Данные, которые живут на сервере (`_data/reviews.json`, логи, загруженные фото отзывов), не перезаписываются.
+### 1. Секреты GitHub (Settings → Secrets and variables → Actions → Secrets)
 
-### Секреты (Settings → Secrets and variables → Actions → New repository secret)
+| Секрет | Значение |
+|---|---|
+| `FTP_SERVER` | `ftp.artro-flex.com` |
+| `FTP_USERNAME` | `it3.artroflex@it3.artro-flex.com` |
+| `FTP_PASSWORD` | пароль этого FTP-аккаунта |
 
-| Секрет | Обязателен | Что это |
-|---|---|---|
-| `FTP_PASSWORD` | да | пароль FTP-пользователя `it3.artroflex@it3.artro-flex.com` |
-| `ADMIN_PASSWORD` | да | пароль редактора отзывов `/admin/` |
-| `LEAD_HASH_SALT` | да | случайная строка 40+ символов (защита хэшей телефонов и IP) |
-| `PARTNER_URL` | для приёма заявок | адрес API партнёра для лидов |
-| `PARTNER_API_KEY` | для приёма заявок | ключ API партнёра |
-| `FTP_USERNAME` | нет | если отличается от `it3.artroflex@it3.artro-flex.com` |
+Переменная `FTP_SERVER_DIR` (вкладка Variables) — не нужна: FTP-аккаунт it3 смотрит прямо в `/home/artrofle/it3.artro-flex`.
 
-Переменные (вкладка Variables, необязательно): `FTP_SERVER` (по умолчанию `ftp.artro-flex.com`), `FTP_SERVER_DIR` (по умолчанию `./` — корень FTP-пользователя; если FTP открывается выше корня сайта, указать путь до `it3.artro-flex/`, со слэшем в конце).
+### 2. Файл секретов на сервере (один раз, вручную)
 
-База данных `artrofle_artroflex3` не используется: заявки уходят партнёру, отзывы и служебные данные хранятся в файлах `_data/`.
+`artroflex3-config.php` (образец — `config.example.php`) загрузить в **`/home/artrofle/artroflex3-config.php`** — уровнем выше папки сайта, через cPanel → File Manager. Там: токен Webvork, `offer_id`, пароль редактора отзывов, соль. В Git и в браузер файл не попадает, выкладка его не трогает.
 
-Локально для тестов можно создать `api/secrets.php` вручную (он в `.gitignore`).
+Заявки уходят в Webvork так же, как у it2: `https://api.webvork.com/v1/new-lead`, при сбое — `api2.webvork.com`, поля `token`, `offer_id`, `name`, `phone`, `country=IT`, `lang=it`, `ip`, `utm_*`.
+
+База данных `artrofle_artroflex3` не используется: отзывы и служебные данные хранятся в файлах `_data/`.
