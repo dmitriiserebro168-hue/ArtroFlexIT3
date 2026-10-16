@@ -1,13 +1,14 @@
 <?php
 /*
- * Отзывы: публичное чтение + редактирование после входа по паролю.
- *   GET  ?scope=public           — опубликованные отзывы (для лендинга)
- *   GET  ?scope=session          — {logged, csrf}
- *   GET  ?scope=all              — все отзывы (нужен вход)
+ * Контент лендинга: отзывы (c=reviews) и мнения специалистов (c=experts).
+ * Публичное чтение + редактирование после входа по паролю (общий вход для обоих редакторов).
+ *   GET  ?scope=public[&c=experts]  — опубликованные записи (для лендинга)
+ *   GET  ?scope=session              — {logged, csrf}
+ *   GET  ?scope=all[&c=experts]     — все записи (нужен вход)
  *   POST {action:"login", password}
- *   POST {action:"logout"}                         + X-CSRF-Token
- *   POST {action:"save", reviews:[...]}            + X-CSRF-Token
- *   POST multipart action=upload, file=<image>     + X-CSRF-Token
+ *   POST {action:"logout"}                                   + X-CSRF-Token
+ *   POST {action:"save", collection, reviews:[...]}          + X-CSRF-Token
+ *   POST multipart action=upload, collection, file=<image>   + X-CSRF-Token
  */
 declare(strict_types=1);
 
@@ -26,9 +27,38 @@ $cfg = is_file(__DIR__ . '/config.php') ? require __DIR__ . '/config.php' : null
 if (!$cfg) out(500, ['ok' => false, 'error' => 'not_configured']);
 
 $dataDir = rtrim($cfg['data_dir'], '/\\');
-$file = "$dataDir/reviews.json";
-$uploadDir = __DIR__ . '/../assets/img/reviews';
-$uploadUrl = 'assets/img/reviews';
+
+// ---------- Коллекции: поля (имя => [тип, макс. длина]) и что видно на лендинге ----------
+$COLLECTIONS = [
+    'reviews' => [
+        'fields' => [
+            'name' => ['str', 60], 'age' => ['int', 120], 'city' => ['str', 60], 'text' => ['str', 1500],
+            'photo' => ['url'], 'video' => ['url'], 'subtitles' => ['url'], 'source' => ['str', 200],
+        ],
+        'public' => ['name', 'age', 'city', 'text', 'photo', 'video', 'subtitles'],
+    ],
+    'experts' => [
+        'fields' => [
+            'name' => ['str', 80], 'specialty' => ['str', 80], 'qualification' => ['str', 160], 'quote' => ['str', 1500],
+            'photo' => ['url'], 'video' => ['url'], 'subtitles' => ['url'],
+            'source' => ['str', 200],   // источник и дата — показывается на лендинге
+            'relation' => ['str', 200], // связь с продуктом — показывается на лендинге
+            'note' => ['str', 300],     // заметка для себя
+        ],
+        'public' => ['name', 'specialty', 'qualification', 'quote', 'photo', 'video', 'subtitles', 'source', 'relation'],
+    ],
+];
+$coll = (string)($_GET['c'] ?? $_POST['collection'] ?? '');
+$rawIn = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && empty($_FILES) ? (string)file_get_contents('php://input', false, null, 0, 512 * 1024) : '';
+if ($coll === '' && $rawIn !== '') {
+    $peek = json_decode($rawIn, true);
+    $coll = is_array($peek) ? (string)($peek['collection'] ?? '') : '';
+}
+if (!isset($COLLECTIONS[$coll])) $coll = 'reviews';
+$C = $COLLECTIONS[$coll];
+$file = "$dataDir/$coll.json";
+$uploadDir = __DIR__ . '/../assets/img/' . $coll;
+$uploadUrl = 'assets/img/' . $coll;
 
 function load_reviews(string $file): array
 {
@@ -70,10 +100,11 @@ if ($method === 'GET') {
         out(200, ['ok' => true, 'reviews' => $all]);
     }
     $pub = array_values(array_filter($all, fn($r) => !empty($r['published']) && !empty($r['consent'])));
-    $pub = array_map(fn($r) => [
-        'name' => $r['name'], 'age' => $r['age'], 'city' => $r['city'], 'text' => $r['text'],
-        'photo' => $r['photo'], 'video' => $r['video'], 'subtitles' => $r['subtitles'],
-    ], $pub);
+    $pub = array_map(function ($r) use ($C) {
+        $o = [];
+        foreach ($C['public'] as $k) $o[$k] = $r[$k] ?? '';
+        return $o;
+    }, $pub);
     header('Cache-Control: public, max-age=60');
     out(200, ['ok' => true, 'reviews' => $pub]);
 }
@@ -95,7 +126,7 @@ if (($_POST['action'] ?? '') === 'upload') {
     out(200, ['ok' => true, 'url' => "$uploadUrl/$name"]);
 }
 
-$in = json_decode((string)file_get_contents('php://input', false, null, 0, 512 * 1024), true);
+$in = json_decode($rawIn, true);
 if (!is_array($in)) out(400, ['ok' => false, 'error' => 'bad_request']);
 $action = $in['action'] ?? '';
 
@@ -145,21 +176,17 @@ if ($action === 'save') {
     $clean = [];
     foreach ($list as $r) {
         if (!is_array($r)) continue;
-        $item = [
-            'id'        => preg_match('/^[\w-]{1,40}$/', (string)($r['id'] ?? '')) ? $r['id'] : bin2hex(random_bytes(6)),
-            'name'      => $str($r['name'] ?? '', 60),
-            'age'       => max(0, min(120, (int)($r['age'] ?? 0))),
-            'city'      => $str($r['city'] ?? '', 60),
-            'text'      => $str($r['text'] ?? '', 1500),
-            'photo'     => $url($r['photo'] ?? ''),
-            'video'     => $url($r['video'] ?? ''),
-            'subtitles' => $url($r['subtitles'] ?? ''),
-            'consent'   => !empty($r['consent']),
-            'source'    => $str($r['source'] ?? '', 200),
-            'published' => !empty($r['published']),
-            'updated_at'=> date('c'),
-        ];
-        // Опубликовать можно только отзыв с подтверждённым согласием автора
+        $item = ['id' => preg_match('/^[\w-]{1,40}$/', (string)($r['id'] ?? '')) ? $r['id'] : bin2hex(random_bytes(6))];
+        foreach ($C['fields'] as $k => $def) {
+            $v = $r[$k] ?? '';
+            if ($def[0] === 'int') $item[$k] = max(0, min($def[1], (int)$v));
+            elseif ($def[0] === 'url') $item[$k] = $url($v);
+            else $item[$k] = $str($v, $def[1]);
+        }
+        $item['consent']    = !empty($r['consent']);
+        $item['published']  = !empty($r['published']);
+        $item['updated_at'] = date('c');
+        // Опубликовать можно только запись с подтверждённым согласием / разрешением автора
         if (!$item['consent']) $item['published'] = false;
         $clean[] = $item;
     }

@@ -65,3 +65,7 @@ jobs:
             assets/img/reviews/*.jpg
             assets/img/reviews/*.png
             assets/img/reviews/*.webp
+            assets/img/experts/*.jpg
+            assets/img/experts/*.png
+            assets/img/experts/*.webp
+            _data/experts.json

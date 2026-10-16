@@ -244,12 +244,49 @@
     }).join('');
   }
 
+  /* ---------- Мнения специалистов из редактора (admin/experts.html) ---------- */
+  function renderExperts(list) {
+    var track = $('[data-experts-track]');
+    if (!track) return;
+    if (!list.length) {
+      if (!isDraft) $('#experts').hidden = true;
+      return;
+    }
+    track.innerHTML = list.map(function (r) {
+      var photo = safeUrl(r.photo), video = safeUrl(r.video), subs = safeUrl(r.subtitles);
+      var initials = String(r.name || '?').replace(/^(dott\.?|dr\.?|prof\.?)\s+/i, '').trim().split(/\s+/)
+        .map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
+      var role = [esc(r.specialty || ''), esc(r.qualification || '')].filter(Boolean).join(' · ');
+      var meta = [];
+      if (r.source) meta.push('Fonte: ' + esc(r.source));
+      if (r.relation) meta.push('Rapporto con il prodotto: ' + esc(r.relation));
+      return '<article class="review expert-card">' +
+        '<header class="expert-card__head">' +
+          (photo
+            ? '<img class="expert-card__photo" src="' + esc(photo) + '" width="72" height="72" loading="lazy" alt="' + esc(r.name) + '">'
+            : '<span class="review__avatar expert-card__avatar" aria-hidden="true">' + esc(initials) + '</span>') +
+          '<div><h3 class="expert-card__name">' + esc(r.name) + '</h3>' + (role ? '<p class="expert-card__role">' + role + '</p>' : '') + '</div>' +
+        '</header>' +
+        (r.quote ? '<blockquote class="review__text expert-card__quote">' + esc(r.quote) + '</blockquote>' : '') +
+        (video ? '<video class="review__video" controls preload="none" playsinline' + (photo ? ' poster="' + esc(photo) + '"' : '') + '>' +
+          '<source src="' + esc(video) + '" type="video/mp4">' +
+          (subs ? '<track kind="subtitles" srclang="it" label="Italiano" src="' + esc(subs) + '" default>' : '') +
+        '</video>' : '') +
+        (meta.length ? '<p class="expert-card__meta">' + meta.join('<br>') + '</p>' : '') +
+      '</article>';
+    }).join('');
+  }
+
   function initReviews() {
     var ep = cfg.form && cfg.form.reviewsEndpoint;
     if (isDemo || !ep || !window.fetch) return Promise.resolve();
-    return fetch(ep).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function (d) { renderReviews(d.reviews || []); })
-      .catch(function () { /* сервер недоступен — остаются отзывы из HTML */ });
+    var get = function (url) { return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); };
+    return Promise.all([
+      get(ep).then(function (d) { renderReviews(d.reviews || []); })
+        .catch(function () { /* сервер недоступен — остаются отзывы из HTML */ }),
+      get(ep + (ep.indexOf('?') > -1 ? '&' : '?') + 'c=experts').then(function (d) { renderExperts(d.reviews || []); })
+        .catch(function () {})
+    ]);
   }
 
   /* ---------- Карусель отзывов ----------
@@ -272,8 +309,8 @@
         var more = document.createElement('button');
         more.type = 'button';
         more.className = 'btn reviews-more';
-        more.setAttribute('data-track', 'btn-reviews-more');
-        more.textContent = 'Mostra altre ' + (items.length - SHOW_FIRST) + ' recensioni';
+        more.setAttribute('data-track', track.hasAttribute('data-experts-track') ? 'btn-experts-more' : 'btn-reviews-more');
+        more.textContent = (root.getAttribute('data-more-label') || 'Mostra altri {n}').replace('{n}', items.length - SHOW_FIRST);
         more.addEventListener('click', function () {
           root.classList.add('is-expanded');
           more.hidden = true;

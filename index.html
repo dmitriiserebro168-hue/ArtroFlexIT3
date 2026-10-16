@@ -122,7 +122,7 @@
   </div>
 
   <!-- Инфографика «Che cos'è il dolore articolare?» (текст продублирован в HTML) -->
-  <div class="wrap mt-l">
+  <div class="wrap mt-l split split--info">
     <h3 class="center">Che cos'è il dolore articolare?</h3>
     <p class="center narrow">Il dolore articolare è un fastidio o una sensazione dolorosa che può comparire quando un'articolazione è irritata, sovraccaricata o infiammata.</p>
     <figure class="infographic">
@@ -154,7 +154,7 @@
 
 <!-- ============ БЛОК 2b. ЧТО ОБЫЧНО ПОМОГАЕТ (из креатива заказчика) ============ -->
 <section class="section" aria-labelledby="helps-title" data-track="sec-helps">
-  <div class="wrap">
+  <div class="wrap split split--helps">
     <h2 id="helps-title" class="center">Cosa aiuta di solito con il dolore alle articolazioni?</h2>
     <p class="center narrow">Molte persone cercano sollievo con diversi metodi. Ecco i più comuni:</p>
     <figure class="infographic infographic--narrow">
@@ -281,7 +281,7 @@
       </article>
     </div>
 
-    <div class="before-after" data-claim="beforeAfter">
+    <div class="before-after split split--ba" data-claim="beforeAfter">
       <h3 class="center">Dolore e rigidità? Torna a muoverti con libertà!</h3>
       <figure class="infographic">
         <img data-track="img-before-after" src="assets/img/prima-dopo.webp" width="1374" height="1145" loading="lazy" alt="" onerror="this.parentNode.classList.add('is-missing')">
@@ -354,36 +354,28 @@
   <div class="wrap">
     <h2 id="reviews-title" class="center">Le esperienze dei nostri clienti</h2>
 
-    <div class="slider" data-slider>
+    <div class="slider" data-slider data-more-label="Mostra altre {n} recensioni">
       <div class="slider__track" data-reviews-track tabindex="0" role="region" aria-label="Recensioni dei clienti, scorri per vederle tutte">
         <article class="review">
-          <div class="review__head">
-            <div class="media review__photo ph-media" style="aspect-ratio:1/1"><span>Foto reale</span></div>
-            <p class="review__who"><strong class="ph">[Nome]</strong>, <span class="ph">[età]</span> anni<br><span class="ph">[Città]</span></p>
-          </div>
-          <blockquote class="review__text ph">[Testo originale della recensione, fornito e verificato dal cliente.]</blockquote>
+          <blockquote class="review__text ph">[Testo originale della recensione — si inserisce nel redattore /admin/]</blockquote>
+          <footer class="review__head">
+            <span class="review__avatar" aria-hidden="true">?</span>
+            <p class="review__who"><strong class="ph">[Nome]</strong><span class="ph">[età] · [Città]</span></p>
+          </footer>
         </article>
         <article class="review">
-          <div class="review__head">
-            <div class="media review__photo ph-media" style="aspect-ratio:1/1"><span>Foto reale</span></div>
-            <p class="review__who"><strong class="ph">[Nome]</strong>, <span class="ph">[età]</span> anni<br><span class="ph">[Città]</span></p>
-          </div>
-          <blockquote class="review__text ph">[Testo originale della recensione, fornito e verificato dal cliente.]</blockquote>
+          <blockquote class="review__text ph">[Testo originale della recensione — si inserisce nel redattore /admin/]</blockquote>
+          <footer class="review__head">
+            <span class="review__avatar" aria-hidden="true">?</span>
+            <p class="review__who"><strong class="ph">[Nome]</strong><span class="ph">[età] · [Città]</span></p>
+          </footer>
         </article>
         <article class="review">
-          <div class="review__head">
-            <div class="media review__photo ph-media" style="aspect-ratio:1/1"><span>Foto reale</span></div>
-            <p class="review__who"><strong class="ph">[Nome]</strong>, <span class="ph">[età]</span> anni<br><span class="ph">[Città]</span></p>
-          </div>
-          <blockquote class="review__text ph">[Testo originale della recensione, fornito e verificato dal cliente.]</blockquote>
-          <!--
-            Видео-отзыв (только по нажатию, с итальянскими субтитрами):
-            <video class="review__video" controls preload="none" playsinline poster="assets/img/review3-poster.webp">
-              <source src="assets/video/review3.mp4" type="video/mp4">
-              <track kind="subtitles" srclang="it" label="Italiano" src="assets/video/review3.it.vtt" default>
-            </video>
-          -->
-          <div class="media review__video ph-media" style="aspect-ratio:16/9"><span>▶ Video (si avvia solo toccando, con sottotitoli in italiano)</span></div>
+          <blockquote class="review__text ph">[Testo originale della recensione — si inserisce nel redattore /admin/]</blockquote>
+          <footer class="review__head">
+            <span class="review__avatar" aria-hidden="true">?</span>
+            <p class="review__who"><strong class="ph">[Nome]</strong><span class="ph">[età] · [Città]</span></p>
+          </footer>
         </article>
       </div>
       <div class="slider__nav">
@@ -397,18 +389,31 @@
 </section>
 
 <!-- ============ БЛОК 7. СПЕЦИАЛИСТЫ ============ -->
-<section class="section section--tint" aria-labelledby="experts-title" data-track="sec-experts">
+<section class="section section--tint" id="experts" aria-labelledby="experts-title" data-track="sec-experts">
   <div class="wrap">
     <h2 id="experts-title" class="center">Il parere degli specialisti</h2>
-    <article class="expert">
-      <div class="media expert__photo ph-media" style="aspect-ratio:1/1"><span>Foto dello specialista</span></div>
-      <div class="expert__body">
-        <h3 class="ph">[Nome e cognome]</h3>
-        <p class="expert__role"><span class="ph">[Specializzazione]</span> · <span class="ph">[Qualifica]</span></p>
-        <blockquote class="expert__quote ph">[Citazione autorizzata o video.]</blockquote>
-        <p class="caption">Fonte e data: <span class="ph">[…]</span>. Rapporto con il prodotto: <span class="ph">[es. collaborazione retribuita / nessuno]</span>.</p>
+
+    <div class="slider" data-slider data-more-label="Mostra altri {n} specialisti">
+      <div class="slider__track" data-experts-track tabindex="0" role="region" aria-label="Pareri degli specialisti, scorri per vederli tutti">
+        <article class="review expert-card">
+          <header class="expert-card__head">
+            <span class="review__avatar expert-card__avatar" aria-hidden="true">?</span>
+            <div>
+              <h3 class="expert-card__name ph">[Nome e cognome]</h3>
+              <p class="expert-card__role"><span class="ph">[Specializzazione]</span> · <span class="ph">[Qualifica]</span></p>
+            </div>
+          </header>
+          <blockquote class="review__text expert-card__quote ph">[Citazione autorizzata o video.]</blockquote>
+          <p class="expert-card__meta">Fonte e data: <span class="ph">[…]</span><br>Rapporto con il prodotto: <span class="ph">[es. collaborazione retribuita / nessuno]</span></p>
+        </article>
       </div>
-    </article>
+      <div class="slider__nav">
+        <button type="button" class="slider__btn" data-slider-prev data-track="experts-prev" aria-label="Specialista precedente">‹</button>
+        <div class="slider__dots" data-slider-dots></div>
+        <span class="slider__count" data-slider-count aria-live="polite" hidden>1 / 1</span>
+        <button type="button" class="slider__btn" data-slider-next data-track="experts-next" aria-label="Specialista successivo">›</button>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -588,8 +593,16 @@
 <section class="section section--form" id="richiesta" aria-labelledby="form-title" data-track="sec-form" tabindex="-1">
   <div class="wrap narrow-wrap">
     <div class="form-card" id="form-card">
-      <h2 id="form-title" class="center">Richiedi una chiamata</h2>
-      <p class="center">Lascia il tuo nome e numero di telefono. Un operatore ti contatterà per fornirti informazioni su <span data-t="productName">Artroflex Active</span> e sulle condizioni dell'offerta.</p>
+      <h2 id="form-title" class="center form-card__title">Richiedi una chiamata</h2>
+      <div class="form-card__intro">
+      <p class="form-card__lead">Lascia il tuo nome e numero di telefono. Un operatore ti contatterà per fornirti informazioni su <span data-t="productName">Artroflex Active</span> e sulle condizioni dell'offerta.</p>
+      <img class="form-card__img" src="assets/img/prodotto-400.webp" width="400" height="347" loading="lazy" alt="">
+      <ul class="form-card__perks">
+        <li><span class="ico" aria-hidden="true">✓</span>Chiamata gratuita e senza impegno</li>
+        <li><span class="ico" aria-hidden="true">✓</span>Pagamento alla consegna</li>
+        <li><span class="ico" aria-hidden="true">✓</span>Prezzo promozionale: 39 € invece di 78 €</li>
+      </ul>
+      </div>
 
       <form id="lead-form" action="api/lead.php" method="post" novalidate>
         <div class="field">

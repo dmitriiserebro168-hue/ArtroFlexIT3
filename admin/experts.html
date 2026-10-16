@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редактор мнений специалистов</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="../assets/css/style.css">
+<style>
+  body { background: var(--bg-tint); font-size: 17px; }
+  .adm { max-width: 980px; margin: 0 auto; padding: 24px var(--gutter) 120px; }
+  .adm h1 { font-size: 28px; }
+  .login { max-width: 420px; margin: 10vh auto 0; background: #fff; border-radius: var(--radius); padding: 28px; border: 1px solid var(--line); }
+  .bar { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--bg-tint); padding: 12px 0; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .bar .btn { min-height: 46px; padding: 10px 18px; font-size: 17px; }
+  .bar__status { margin-left: auto; font-weight: 600; color: var(--text-soft); }
+  .bar__status.is-dirty { color: var(--cta); }
+  .bar__status.is-err { color: var(--err); }
+  .btn--sec { background: #fff; color: var(--text); border: 2px solid #8a948f; }
+  .btn--danger { background: #fff; color: var(--err); border: 2px solid var(--err); }
+  .btn--sm { min-height: 40px !important; padding: 6px 12px !important; font-size: 15px !important; }
+  .rv { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; display: grid; gap: 16px; grid-template-columns: 140px 1fr; }
+  .rv.is-off { opacity: .8; border-style: dashed; }
+  .rv__photo { width: 140px; aspect-ratio: 1; border-radius: 50%; background: var(--bg-tint) center/cover no-repeat; border: 2px dashed #b9c2be; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 13px; color: var(--text-soft); }
+  .rv__photo.has-img { border-style: solid; }
+  .rv__side { display: grid; gap: 8px; align-content: start; }
+  .rv__fields { display: grid; gap: 12px; grid-template-columns: 1fr 90px 1fr; }
+  .rv__fields .full { grid-column: 1 / -1; }
+  .rv label { display: block; font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .rv input[type=text], .rv input[type=number], .rv input[type=url], .rv textarea {
+    width: 100%; font: 400 17px/1.4 var(--font); padding: 10px 12px; border: 2px solid #b9c2be; border-radius: 8px; background: #fff; color: var(--text);
+  }
+  .rv textarea { min-height: 120px; resize: vertical; }
+  .rv input:focus, .rv textarea:focus { border-color: var(--focus); outline: none; }
+  .rv__count { font-size: 13px; color: var(--text-soft); text-align: right; }
+  .rv__checks { display: flex; flex-wrap: wrap; gap: 18px; }
+  .rv__checks label { display: flex; gap: 8px; align-items: center; font-weight: 600; margin: 0; }
+  .rv__checks input { width: 22px; height: 22px; accent-color: var(--trust); }
+  .rv__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .rv__badge { display: inline-block; font-size: 13px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+  .rv__badge.on { background: var(--trust-bg); color: var(--trust); }
+  .rv__badge.off { background: #eee; color: var(--text-soft); }
+  .hint { font-size: 15px; color: var(--text-soft); }
+  .empty { text-align: center; padding: 48px 16px; color: var(--text-soft); }
+  @media (max-width: 640px) {
+    .rv { grid-template-columns: 1fr; }
+    .rv__side { grid-template-columns: 100px 1fr; align-items: center; }
+    .rv__photo { width: 100px; }
+    .rv__fields { grid-template-columns: 1fr 80px; }
+    .rv__fields .city { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<main class="adm">
+
+  <!-- Вход -->
+  <section class="login" id="login" hidden>
+    <h1>Мнения специалистов</h1>
+    <form id="login-form" novalidate>
+      <div class="field">
+        <label for="pw">Пароль</label>
+        <input id="pw" type="password" autocomplete="current-password" required style="width:100%;min-height:52px;font-size:19px;padding:10px 14px;border:2px solid #8a948f;border-radius:10px">
+      </div>
+      <p class="form-error" id="login-err" role="alert" hidden></p>
+      <button class="btn btn--cta btn--block" type="submit">Войти</button>
+    </form>
+  </section>
+
+  <!-- Редактор -->
+  <section id="editor" hidden>
+    <h1>Мнения специалистов на лендинге</h1>
+    <p class="hint">На странице показываются только записи с отметками «Разрешение специалиста получено» и «Опубликован», в порядке списка. Указывайте настоящие имя, специальность и квалификацию, а также связь специалиста с продуктом — она показывается под цитатой. Изменения появятся на лендинге после «Сохранить».</p>
+    <div class="bar">
+      <button class="btn btn--cta" type="button" id="save">Сохранить</button>
+      <button class="btn btn--sec" type="button" id="add">+ Добавить специалиста</button>
+      <a class="btn btn--sec" href="../index.html#experts-title" target="_blank" rel="noopener">Открыть лендинг</a>
+      <a class="btn btn--sec" href="./">Отзывы</a>
+      <a class="btn btn--sec" href="stats.php">Статистика</a>
+      <button class="btn btn--sec" type="button" id="logout">Выйти</button>
+      <span class="bar__status" id="status" aria-live="polite"></span>
+    </div>
+    <div id="list"></div>
+  </section>
+
+</main>
+
+<template id="tpl">
+  <article class="rv">
+    <div class="rv__side">
+      <div class="rv__photo" data-photo>нет фото</div>
+      <div>
+        <label class="btn btn--sec btn--sm" style="display:inline-flex;cursor:pointer">Загрузить фото
+          <input type="file" accept="image/jpeg,image/png,image/webp" data-upload hidden>
+        </label>
+        <p class="hint" style="margin:6px 0 0">JPG, PNG или WebP до 3 МБ</p>
+      </div>
+    </div>
+    <div>
+      <div class="rv__fields">
+        <div><label>Имя и фамилия</label><input type="text" data-f="name" maxlength="80" placeholder="Dott. Mario Bianchi"></div>
+        <div class="city" style="grid-column:span 2"><label>Специальность</label><input type="text" data-f="specialty" maxlength="80" placeholder="Ortopedico, fisioterapista…"></div>
+        <div class="full"><label>Квалификация</label><input type="text" data-f="qualification" maxlength="160" placeholder="напр. Specialista in ortopedia, Ospedale …, 20 anni di esperienza"></div>
+        <div class="full"><label>Цитата (дословно, с согласия специалиста)</label><textarea data-f="quote" maxlength="1500"></textarea><div class="rv__count" data-count></div></div>
+        <div class="full"><label>Фото (адрес)</label><input type="text" data-f="photo" placeholder="assets/img/experts/… или https://…"></div>
+        <div class="full"><label>Видео mp4 (необязательно)</label><input type="text" data-f="video" placeholder="https://… или assets/…"></div>
+        <div class="full"><label>Субтитры .vtt на итальянском (для видео)</label><input type="text" data-f="subtitles" placeholder="https://… или assets/…"></div>
+        <div class="full"><label>Источник и дата (показывается на сайте)</label><input type="text" data-f="source" maxlength="200" placeholder="напр. intervista, ottobre 2026"></div>
+        <div class="full"><label>Связь с продуктом (показывается на сайте)</label><input type="text" data-f="relation" maxlength="200" placeholder="напр. collaborazione retribuita / nessuna"></div>
+        <div class="full"><label>Заметка для себя (на сайте не показывается)</label><input type="text" data-f="note" maxlength="300" placeholder="договор, контакты, где хранится разрешение"></div>
+      </div>
+      <div class="rv__checks" style="margin-top:14px">
+        <label><input type="checkbox" data-f="consent"> Разрешение специалиста на публикацию получено</label>
+        <label><input type="checkbox" data-f="published"> Опубликован</label>
+        <span class="rv__badge" data-badge></span>
+      </div>
+      <div class="rv__actions" style="margin-top:14px">
+        <button type="button" class="btn btn--sec btn--sm" data-act="up" aria-label="Выше">↑ Выше</button>
+        <button type="button" class="btn btn--sec btn--sm" data-act="down" aria-label="Ниже">↓ Ниже</button>
+        <button type="button" class="btn btn--danger btn--sm" data-act="del">Удалить</button>
+      </div>
+    </div>
+  </article>
+</template>
+
+<script>
+(function () {
+  'use strict';
+  var API = '../api/reviews.php';
+  var COLL = 'experts';
+  var csrf = null, reviews = [], dirty = false;
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+
+  function status(msg, cls) {
+    var el = $('#status');
+    el.textContent = msg || '';
+    el.className = 'bar__status' + (cls ? ' ' + cls : '');
+  }
+  function setDirty(v) {
+    dirty = v;
+    if (v) status('Есть несохранённые изменения', 'is-dirty');
+  }
+  window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  function api(method, body, isForm) {
+    var opt = { method: method, credentials: 'same-origin', headers: {} };
+    if (csrf) opt.headers['X-CSRF-Token'] = csrf;
+    if (body) {
+      if (isForm) opt.body = body;
+      else { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    }
+    var url = method === 'GET' ? API + '?scope=' + body + '&c=' + COLL : API;
+    if (method === 'GET') delete opt.body;
+    return fetch(url, opt).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (r.status === 401 && d.error === 'auth') { showLogin(); throw new Error('auth'); }
+        if (!r.ok || !d.ok) throw new Error(d.error || ('http_' + r.status));
+        return d;
+      });
+    });
+  }
+
+  function uid() { return Math.random().toString(36).slice(2, 10); }
+
+  function showLogin() {
+    $('#editor').hidden = true;
+    $('#login').hidden = false;
+    $('#pw').focus();
+  }
+  function showEditor() {
+    $('#login').hidden = true;
+    $('#editor').hidden = false;
+  }
+
+  function render() {
+    var list = $('#list');
+    list.innerHTML = '';
+    if (!reviews.length) {
+      list.innerHTML = '<p class="empty">Записей пока нет. Нажмите «+ Добавить специалиста».</p>';
+      return;
+    }
+    reviews.forEach(function (r, i) {
+      var node = $('#tpl').content.firstElementChild.cloneNode(true);
+      node.querySelectorAll('[data-f]').forEach(function (inp) {
+        var k = inp.getAttribute('data-f');
+        if (inp.type === 'checkbox') inp.checked = !!r[k];
+        else inp.value = r[k] != null && r[k] !== 0 ? r[k] : '';
+        inp.addEventListener('input', function () {
+          r[k] = inp.type === 'checkbox' ? inp.checked : (inp.type === 'number' ? parseInt(inp.value, 10) || 0 : inp.value);
+          if (k === 'consent' && !inp.checked) r.published = false;
+          setDirty(true);
+          refresh(node, r);
+        });
+      });
+      node.querySelector('[data-upload]').addEventListener('change', function (e) {
+        var f = e.target.files[0];
+        if (!f) return;
+        if (f.size > 3 * 1024 * 1024) { status('Фото больше 3 МБ', 'is-err'); return; }
+        var fd = new FormData();
+        fd.append('action', 'upload');
+        fd.append('collection', COLL);
+        fd.append('file', f);
+        status('Загрузка фото…');
+        api('POST', fd, true).then(function (d) {
+          r.photo = d.url;
+          node.querySelector('[data-f="photo"]').value = d.url;
+          setDirty(true);
+          refresh(node, r);
+        }).catch(function (err) { status('Не удалось загрузить фото: ' + err.message, 'is-err'); });
+      });
+      node.querySelectorAll('[data-act]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var act = b.getAttribute('data-act');
+          if (act === 'del') {
+            if (!confirm('Удалить специалиста «' + (r.name || 'без имени') + '»?')) return;
+            reviews.splice(i, 1);
+          } else {
+            var j = act === 'up' ? i - 1 : i + 1;
+            if (j < 0 || j >= reviews.length) return;
+            reviews.splice(j, 0, reviews.splice(i, 1)[0]);
+          }
+          setDirty(true);
+          render();
+        });
+      });
+      refresh(node, r);
+      list.appendChild(node);
+    });
+  }
+
+  function refresh(node, r) {
+    var ph = node.querySelector('[data-photo]');
+    if (r.photo) {
+      ph.style.backgroundImage = 'url("' + (/^https:/.test(r.photo) ? r.photo : '../' + r.photo).replace(/"/g, '') + '")';
+      ph.classList.add('has-img'); ph.textContent = '';
+    } else {
+      ph.style.backgroundImage = ''; ph.classList.remove('has-img'); ph.textContent = 'нет фото';
+    }
+    var pub = node.querySelector('[data-f="published"]');
+    pub.disabled = !r.consent;
+    pub.checked = !!r.published;
+    var on = r.published && r.consent;
+    var badge = node.querySelector('[data-badge]');
+    badge.textContent = on ? 'Показывается на сайте' : (r.consent ? 'Скрыт' : 'Скрыт: нет разрешения специалиста');
+    badge.className = 'rv__badge ' + (on ? 'on' : 'off');
+    node.classList.toggle('is-off', !on);
+    node.querySelector('[data-count]').textContent = (r.quote || '').length + ' / 1500';
+  }
+
+  function load() {
+    return api('GET', 'all').then(function (d) {
+      reviews = d.reviews || [];
+      render();
+      setDirty(false);
+      status('Загружено специалистов: ' + reviews.length);
+    });
+  }
+
+  $('#login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var err = $('#login-err');
+    err.hidden = true;
+    api('POST', { action: 'login', password: $('#pw').value }).then(function (d) {
+      csrf = d.csrf;
+      $('#pw').value = '';
+      showEditor();
+      return load();
+    }).catch(function (e2) {
+      err.textContent = e2.message === 'rate_limited' ? 'Слишком много попыток. Подождите 15 минут.' : 'Неверный пароль';
+      err.hidden = false;
+    });
+  });
+
+  $('#add').addEventListener('click', function () {
+    reviews.unshift({ id: uid(), name: '', specialty: '', qualification: '', quote: '', photo: '', video: '', subtitles: '', source: '', relation: '', note: '', consent: false, published: false });
+    setDirty(true);
+    render();
+    var first = $('#list [data-f="name"]');
+    if (first) first.focus();
+  });
+
+  $('#save').addEventListener('click', function () {
+    var btn = this;
+    btn.disabled = true;
+    status('Сохранение…');
+    api('POST', { action: 'save', collection: COLL, reviews: reviews }).then(function (d) {
+      reviews = d.reviews;
+      render();
+      setDirty(false);
+      var n = reviews.filter(function (r) { return r.published && r.consent; }).length;
+      status('Сохранено. На сайте: ' + n + ' из ' + reviews.length);
+    }).catch(function (e) {
+      status('Ошибка сохранения: ' + e.message, 'is-err');
+    }).then(function () { btn.disabled = false; });
+  });
+
+  $('#logout').addEventListener('click', function () {
+    if (dirty && !confirm('Есть несохранённые изменения. Выйти без сохранения?')) return;
+    api('POST', { action: 'logout' }).catch(function () {}).then(function () {
+      csrf = null; dirty = false; reviews = [];
+      showLogin();
+    });
+  });
+
+  // Старт: проверить, есть ли уже сессия
+  api('GET', 'session').then(function (d) {
+    if (d.logged) { csrf = d.csrf; showEditor(); return load(); }
+    showLogin();
+  }).catch(showLogin);
+})();
+</script>
+</body>
+</html>

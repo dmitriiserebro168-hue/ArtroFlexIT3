@@ -1,0 +1,6 @@
+# Загруженные фото отзывов: только картинки, без выполнения скриптов
+<FilesMatch "\.(?i:php|phtml|phar|pl|py|cgi|sh|html?)$">
+  Require all denied
+</FilesMatch>
+Options -ExecCGI
+RemoveHandler .php .phtml .phar
