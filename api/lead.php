@@ -23,7 +23,7 @@ $cfg = require __DIR__ . '/config.php';
 date_default_timezone_set('Europe/Rome');
 
 $dataDir = rtrim($cfg['data_dir'], '/\\');
-foreach (['requests', 'phones', 'rate', 'logs'] as $sub) {
+foreach (['requests', 'logs'] as $sub) {
     if (!is_dir("$dataDir/$sub")) @mkdir("$dataDir/$sub", 0750, true);
 }
 
@@ -38,15 +38,11 @@ function mask_phone(string $p): string
     return substr($p, 0, 5) . str_repeat('*', max(0, strlen($p) - 7)) . substr($p, -2);
 }
 
+// Как в it2: оставить только цифры и «+», формат строго +39 и 10–11 цифр
 function normalize_phone(string $raw): ?string
 {
-    $s = preg_replace('/[\s.\-\/()]/', '', $raw);
-    if (strpos($s, '+39') === 0) $s = substr($s, 3);
-    elseif (strpos($s, '0039') === 0) $s = substr($s, 4);
-    elseif (strpos($s, '+') === 0) return null;
-    if (!preg_match('/^\d+$/', $s)) return null;
-    if (preg_match('/^3\d{8,9}$/', $s) || preg_match('/^0\d{5,10}$/', $s)) return '+39' . $s;
-    return null;
+    $s = preg_replace('/[^\d+]/', '', $raw);
+    return preg_match('/^\+39\d{10,11}$/', $s) ? $s : null;
 }
 
 function uuid4(): string
@@ -73,7 +69,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && ($_GET['health'] ?? '') === 
         'token_set'         => (string)($cfg['partner']['static']['token'] ?? '') !== '',
         'offer_id'          => (string)($cfg['partner']['static']['offer_id'] ?? ''),
         'admin_password_set'=> (string)($cfg['admin_password'] ?? '') !== '',
-        'salt_custom'       => $cfg['hash_salt'] !== 'artroflex-it3-fallback-salt',
         'curl'              => function_exists('curl_init'),
         'data_writable'     => is_writable($dataDir),
         'partner_reachable' => $reach,
@@ -100,22 +95,14 @@ if (!empty($in['website'])) {
     out(200, ['ok' => true, 'lead_id' => uuid4()]);
 }
 
-// ---------- Ограничение частоты по IP ----------
 $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-$ipHash = hash('sha256', $cfg['hash_salt'] . $ip);
-$rateFile = "$dataDir/rate/$ipHash.json";
 $now = time();
-$hits = is_file($rateFile) ? (json_decode((string)file_get_contents($rateFile), true) ?: []) : [];
-$hits = array_values(array_filter($hits, fn($t) => $t > $now - $cfg['rate_limit']['window']));
-if (count($hits) >= $cfg['rate_limit']['max']) {
-    out(429, ['ok' => false, 'error' => 'rate_limited']);
-}
-$hits[] = $now;
-@file_put_contents($rateFile, json_encode($hits), LOCK_EX);
 
 // ---------- Валидация ----------
+// Как в it2: имя — 2–60 символов после обрезки и схлопывания пробелов
 $name = trim(preg_replace('/\s+/u', ' ', (string)($in['name'] ?? '')));
-if (!preg_match("/^\p{L}[\p{L} '’.\-]{1,59}$/u", $name)) {
+$nameLen = mb_strlen($name, 'UTF-8');
+if ($nameLen < 2 || $nameLen > 60) {
     out(422, ['ok' => false, 'error' => 'name', 'field' => 'name']);
 }
 $phone = normalize_phone((string)($in['phone'] ?? ''));
@@ -141,16 +128,6 @@ if (is_file($reqFile)) {
     }
 }
 
-// ---------- Дубль по телефону ----------
-$phoneHash = hash('sha256', $cfg['hash_salt'] . $phone);
-$phoneFile = "$dataDir/phones/$phoneHash.json";
-if (is_file($phoneFile)) {
-    $seen = json_decode((string)file_get_contents($phoneFile), true);
-    if ($seen && ($now - (int)$seen['at']) < $cfg['dedupe_hours'] * 3600) {
-        log_event($dataDir, 'info', 'duplicate_phone', ['lead_id' => $seen['lead_id']]);
-        out(200, ['ok' => true, 'lead_id' => $seen['lead_id'], 'duplicate' => true]);
-    }
-}
 
 // ---------- Формирование лида ----------
 $params = is_array($in['params'] ?? null) ? $in['params'] : [];
@@ -258,15 +235,14 @@ if (!$accepted) {
     out(502, ['ok' => false, 'error' => 'partner']);
 }
 
-// На диске — только хэши и lead_id, без имени и телефона
+// На диске — только хэш request_id и lead_id, без имени и телефона
 @file_put_contents($reqFile, json_encode(['ok' => true, 'lead_id' => $leadId, 'at' => $now]), LOCK_EX);
-@file_put_contents($phoneFile, json_encode(['lead_id' => $leadId, 'at' => $now]), LOCK_EX);
 log_event($dataDir, 'info', 'lead_accepted', ['lead_id' => $leadId, 'attempts' => $attempts, 'utm_campaign' => $lead['utm_campaign']]);
 
 // Изредка чистим старые служебные файлы
 if (random_int(1, 50) === 1) {
     $limit = $now - $cfg['retention_days'] * 86400;
-    foreach (['requests', 'phones', 'rate'] as $sub) {
+    foreach (['requests'] as $sub) {
         foreach (glob("$dataDir/$sub/*") ?: [] as $f) {
             if (filemtime($f) < $limit) @unlink($f);
         }

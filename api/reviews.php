@@ -101,7 +101,9 @@ $action = $in['action'] ?? '';
 
 // ---------- Вход ----------
 if ($action === 'login') {
-    $ip = hash('sha256', $cfg['hash_salt'] . ($_SERVER['REMOTE_ADDR'] ?? ''));
+    // Защита пароля от перебора: 5 попыток за 15 минут с одного IP
+    if (!is_dir("$dataDir/rate")) @mkdir("$dataDir/rate", 0750, true);
+    $ip = hash('sha256', 'admin-login|' . ($_SERVER['REMOTE_ADDR'] ?? ''));
     $rf = "$dataDir/rate/login-$ip.json";
     $now = time();
     $hits = is_file($rf) ? (json_decode((string)file_get_contents($rf), true) ?: []) : [];

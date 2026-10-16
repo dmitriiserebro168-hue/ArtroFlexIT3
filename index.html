@@ -590,15 +590,18 @@
       <form id="lead-form" action="api/lead.php" method="post" novalidate>
         <div class="field">
           <label for="f-name">Nome</label>
-          <input id="f-name" name="name" type="text" autocomplete="given-name" autocapitalize="words" maxlength="60" required aria-describedby="f-name-err">
-          <p class="field__err" id="f-name-err" hidden>Inserisci il tuo nome</p>
+          <input id="f-name" name="name" type="text" autocomplete="name" autocapitalize="words" maxlength="60" placeholder="Es. Maria Rossi" required aria-describedby="f-name-err">
+          <p class="field__err" id="f-name-err" hidden>Inserisci il tuo nome.</p>
         </div>
 
         <div class="field">
           <label for="f-phone">Numero di telefono</label>
-          <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" value="+39 " required aria-describedby="f-phone-hint f-phone-err">
-          <p class="field__hint" id="f-phone-hint">Esempio: +39 333 123 4567</p>
-          <p class="field__err" id="f-phone-err" hidden>Inserisci un numero di telefono valido</p>
+          <div class="phone">
+            <span class="phone__pre" aria-hidden="true">+39</span>
+            <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="18" placeholder="Es. 333 123 4567" required aria-describedby="f-phone-hint f-phone-err">
+          </div>
+          <p class="field__hint" id="f-phone-hint">Il prefisso +39 è già inserito. Inserisci il numero: 10–11 cifre.</p>
+          <p class="field__err" id="f-phone-err" hidden>Inserisci un numero di telefono valido.</p>
         </div>
 
         <!-- антиспам: поле скрыто от людей -->

@@ -330,18 +330,33 @@
   var done = false;
   var updateSticky = function () {};
 
-  /* ---------- Телефон ---------- */
-  // Возвращает +39XXXXXXXXX или null. Мобильные: 3 + 8–9 цифр; стационарные: 0 + 5–10 цифр.
-  function normalizePhone(raw) {
-    var s = String(raw || '').replace(/[\s.\-\/()]/g, '');
-    if (s.indexOf('+39') === 0) s = s.slice(3);
-    else if (s.indexOf('0039') === 0) s = s.slice(4);
-    else if (s.charAt(0) === '+') return null; // другой код страны
-    if (!/^\d+$/.test(s)) return null;
-    if (/^3\d{8,9}$/.test(s) || /^0\d{5,10}$/.test(s)) return '+39' + s;
-    return null;
+  /* ---------- Имя и телефон: правила как в it2 ---------- */
+  // Имя: 2–60 символов после обрезки и схлопывания пробелов.
+  var NAME_MIN = 2, NAME_MAX = 60;
+  function cleanName(v) { return String(v || '').trim().replace(/\s+/g, ' '); }
+  function validName(v) { var l = cleanName(v).length; return l >= NAME_MIN && l <= NAME_MAX; }
+
+  // Телефон: префикс +39 фиксирован, вводится национальный номер.
+  //  • проверяется только длина: 10–11 цифр;
+  //  • 0 у стационарных (+39 06…) остаётся, лишний 0 перед мобильным (0 + 3xx…, 11 цифр) убирается;
+  //  • если вставили номер с +39 / 0039 / 39 — префикс отрезается.
+  var IT_MIN = 10, IT_MAX = 11, IT_VALID = /^\d{10,11}$/;
+  function cleanPhone(v) {
+    var raw = String(v || '').trim();
+    var d = raw.replace(/\D/g, '');
+    if (raw.charAt(0) === '+') { if (d.indexOf('39') === 0) d = d.slice(2); }
+    else if (d.indexOf('0039') === 0) d = d.slice(4);
+    else if (d.indexOf('39') === 0 && d.length > 10 && /^[03]/.test(d.slice(2))) d = d.slice(2);
+    if (/^03\d{9}$/.test(d)) d = d.slice(1);
+    return d.slice(0, IT_MAX);
   }
-  var NAME_RE = /^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ '’.\-]{1,59}$/;
+  function normPhone(v) { var d = cleanPhone(v); return IT_VALID.test(d) ? d : null; }
+  function prettyPhone(d) {
+    if (/^3\d{9}$/.test(d)) return d.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+    if (/^3\d{8}$/.test(d)) return d.replace(/^(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3');
+    if (/^0[26]\d+$/.test(d)) return d.replace(/^(\d{2})(\d{1,4})(\d*)$/, function (m, a, b, c) { return [a, b, c].filter(Boolean).join(' '); });
+    return d.replace(/^(\d{3})(\d{1,3})(\d*)$/, function (m, a, b, c) { return [a, b, c].filter(Boolean).join(' '); });
+  }
 
   /* ---------- Форма ---------- */
   function initForm(params) {
@@ -357,21 +372,35 @@
     form.addEventListener('input', function () {
       if (!started) { started = true; track('form_start'); }
     });
-    phone.addEventListener('focus', function () {
-      if (!phone.value.trim()) phone.value = '+39 ';
-    });
 
     function setErr(input, errEl, show) {
       errEl.hidden = !show;
       input.setAttribute('aria-invalid', show ? 'true' : 'false');
     }
-    name.addEventListener('blur', function () { if (name.value) setErr(name, $('#f-name-err'), !NAME_RE.test(name.value.trim())); });
-    phone.addEventListener('blur', function () {
-      var v = phone.value.replace(/\s/g, '');
-      if (v && v !== '+39') setErr(phone, $('#f-phone-err'), !normalizePhone(phone.value));
+    var nameErr = $('#f-name-err'), phoneErr = $('#f-phone-err');
+    var phoneField = phone.closest('.field');
+
+    name.addEventListener('input', function () { setErr(name, nameErr, false); });
+    name.addEventListener('blur', function () { if (name.value) setErr(name, nameErr, !validName(name.value)); });
+
+    phone.addEventListener('input', function () {
+      // Человек набирает префикс вручную («+», «+3», «+39», «0», «00», «003») — ждём следующую цифру
+      if (/^(\+|\+3|\+39|0|00|003)$/.test(phone.value.replace(/\s/g, ''))) {
+        phoneField.classList.remove('is-valid'); setErr(phone, phoneErr, false); return;
+      }
+      var d = cleanPhone(phone.value);
+      if (phone.value.replace(/\s/g, '') !== d) phone.value = d;
+      var ok = !!normPhone(d);
+      phoneField.classList.toggle('is-valid', ok);
+      setErr(phone, phoneErr, !ok && d.length >= IT_MAX);
     });
-    name.addEventListener('input', function () { if (NAME_RE.test(name.value.trim())) setErr(name, $('#f-name-err'), false); });
-    phone.addEventListener('input', function () { if (normalizePhone(phone.value)) setErr(phone, $('#f-phone-err'), false); });
+    phone.addEventListener('blur', function () {
+      var d = cleanPhone(phone.value);
+      if (d) phone.value = prettyPhone(d);
+      var ok = !!normPhone(d);
+      phoneField.classList.toggle('is-valid', ok);
+      setErr(phone, phoneErr, !!d && !ok);
+    });
     if (requireConsent) consent.addEventListener('change', function () { if (consent.checked) setErr(consent, $('#f-consent-err'), false); });
 
     function uuid() {
@@ -412,9 +441,10 @@
       if (busy) return; // защита от двойной отправки
       formErr.hidden = true;
 
-      var n = name.value.trim().replace(/\s+/g, ' ');
-      var p = normalizePhone(phone.value);
-      var badName = !NAME_RE.test(n);
+      var n = cleanName(name.value);
+      var digits = normPhone(phone.value);
+      var p = digits ? '+39' + digits : null;   // отправляем в формате +39…, как it2
+      var badName = !validName(n);
       var badPhone = !p;
       var badConsent = requireConsent && !consent.checked;
       setErr(name, $('#f-name-err'), badName);
@@ -450,7 +480,7 @@
 
       send(payload).then(function (d) {
         track('lead_accepted', { lead_id: d.lead_id, duplicate: !!d.duplicate });
-        $('#success-phone').textContent = p.replace(/^\+39(\d{3})(\d{3})(\d+)$/, '+39 $1 $2 $3');
+        $('#success-phone').textContent = '+39 ' + prettyPhone(digits);
         $('#form-card').hidden = true;
         var s = $('#success');
         s.hidden = false;

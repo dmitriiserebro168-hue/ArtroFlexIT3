@@ -64,9 +64,6 @@ return (function (): array {
         // ---------- Защита ----------
         'allowed_origins' => ['https://it3.artro-flex.com', 'https://www.it3.artro-flex.com'],
         'require_consent' => true,                       // должно совпадать с form.requireConsent в config.js
-        'rate_limit'      => ['max' => 5, 'window' => 600], // не более 5 заявок с IP за 10 минут
-        'dedupe_hours'    => 24,                         // повтор того же телефона в течение N часов не отправляется
-        'hash_salt'       => $s('hash_salt', 'artroflex-it3-fallback-salt'),
 
         // Каталог для служебных файлов
         'data_dir'        => __DIR__ . '/../_data',
