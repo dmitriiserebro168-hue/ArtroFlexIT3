@@ -58,6 +58,29 @@ function uuid4(): string
 }
 
 // ---------- Базовые проверки запроса ----------
+// lead.php?health=config — проверка настроек без отправки лида и без раскрытия секретов
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && ($_GET['health'] ?? '') === 'config') {
+    $reach = false;
+    if (function_exists('curl_init')) {
+        $ch = curl_init($cfg['partner']['url']);
+        curl_setopt_array($ch, [CURLOPT_CONNECT_ONLY => true, CURLOPT_CONNECTTIMEOUT => 5, CURLOPT_TIMEOUT => 8]);
+        $reach = curl_exec($ch) !== false;
+        curl_close($ch);
+    }
+    out(200, [
+        'ok'                => true,
+        'secrets_file'      => is_file(dirname(__DIR__, 2) . '/artroflex3-config.php'),
+        'token_set'         => (string)($cfg['partner']['static']['token'] ?? '') !== '',
+        'offer_id'          => (string)($cfg['partner']['static']['offer_id'] ?? ''),
+        'admin_password_set'=> (string)($cfg['admin_password'] ?? '') !== '',
+        'salt_custom'       => $cfg['hash_salt'] !== 'artroflex-it3-fallback-salt',
+        'curl'              => function_exists('curl_init'),
+        'data_writable'     => is_writable($dataDir),
+        'partner_reachable' => $reach,
+        'php'               => PHP_VERSION,
+    ]);
+}
+
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     out(405, ['ok' => false, 'error' => 'method']);
 }
