@@ -19,6 +19,7 @@ window.LANDING_CONFIG = {
     productName: "Artroflex Active",
     productCategory: "un integratore alimentare in capsule",
     partnerName: "Neo Elementum OÜ",       // партнёрская сеть (Webvork), получает заявки
+    callerName: "Geberich",                // от чьего имени звонит оператор
     sellerName: "[RAGIONE SOCIALE VENDITORE]",
     sellerAddress: "[INDIRIZZO SEDE LEGALE]",
     sellerVat: "[PARTITA IVA]",
