@@ -150,7 +150,7 @@
     });
     $$('[data-offer-end-date]').forEach(function (el) { el.textContent = dateFmt.format(new Date(end)); });
     var cells = {};
-    ['d', 'h', 'm', 's'].forEach(function (k) { cells[k] = $('[data-timer="' + k + '"]'); });
+    ['d', 'h', 'm', 's', 'H'].forEach(function (k) { cells[k] = $$('[data-timer="' + k + '"]'); });
     var pad = function (n) { return (n < 10 ? '0' : '') + n; };
     var timerId;
     function tick() {
@@ -160,11 +160,12 @@
         setPromoState(true);
         return;
       }
-      if (!cells.d) return;
-      cells.d.textContent = Math.floor(left / 86400);
-      cells.h.textContent = pad(Math.floor(left % 86400 / 3600));
-      cells.m.textContent = pad(Math.floor(left % 3600 / 60));
-      cells.s.textContent = pad(left % 60);
+      var set = function (k, v) { cells[k].forEach(function (el) { el.textContent = v; }); };
+      set('d', Math.floor(left / 86400));
+      set('h', pad(Math.floor(left % 86400 / 3600)));
+      set('H', pad(Math.floor(left / 3600))); // всего часов — для компактного таймера на первом экране
+      set('m', pad(Math.floor(left % 3600 / 60)));
+      set('s', pad(left % 60));
     }
     tick();
     timerId = setInterval(tick, 1000);
