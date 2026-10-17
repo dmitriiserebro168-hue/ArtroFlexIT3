@@ -10,10 +10,17 @@
 return (function (): array {
     $secret = [];
     foreach ([dirname(__DIR__, 2) . '/artroflex3-config.php', __DIR__ . '/secrets.php'] as $f) {
-        if (is_file($f)) {
+        if (!is_file($f)) continue;
+        // Ошибка в файле секретов не должна ронять весь сайт: запоминаем её для ?health=config
+        try {
             $c = include $f;
-            if (is_array($c)) { $secret = $c; break; }
+        } catch (Throwable $e) {
+            $GLOBALS['LP_SECRETS_ERROR'] = basename($f) . ': ' . get_class($e) . ' — ' . $e->getMessage() . ' (строка ' . $e->getLine() . ')';
+            error_log('config.php: ' . $GLOBALS['LP_SECRETS_ERROR']);
+            continue;
         }
+        if (is_array($c)) { $secret = $c; break; }
+        $GLOBALS['LP_SECRETS_ERROR'] = basename($f) . ': файл должен заканчиваться «return array(…);»';
     }
     $s = function (string $key, string $default = '') use ($secret): string {
         $v = (string)($secret[$key] ?? '');
