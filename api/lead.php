@@ -410,7 +410,7 @@ function tg_notify(array $cfg, string $html): bool
     if (!$ok) {
         // Токен в журнал не пишем
         error_log('lead.php: telegram failed: HTTP ' . $code . ' ' . mb_substr((string)$resp, 0, 300));
-        $dir = rtrim($cfg['data_dir'], '/\');
+        $dir = rtrim($cfg['data_dir'], '/\\');
         @file_put_contents("$dir/logs/" . date('Y-m') . '.log',
             date('c') . ' [error] telegram_failed ' . json_encode(['http' => $code, 'resp' => mb_substr((string)$resp, 0, 300)], JSON_UNESCAPED_UNICODE) . PHP_EOL,
             FILE_APPEND | LOCK_EX);
