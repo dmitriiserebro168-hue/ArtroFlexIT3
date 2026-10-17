@@ -156,6 +156,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && ($_GET['health'] ?? '') === 
         'db_connected'      => lp_db($cfg) !== null,
         'db_error'          => isset($GLOBALS['LP_DB_ERROR']) ? preg_replace('/\(using password.*$/', '', (string)$GLOBALS['LP_DB_ERROR']) : null,
         'alert_email_set'   => (string)($cfg['alert_email'] ?? '') !== '',
+        'telegram_set'      => !empty($cfg['telegram']['token']) && !empty($cfg['telegram']['chat_id']),
+        'telegram_chat_id'  => (string)($cfg['telegram']['chat_id'] ?? ''),
         'stats_password_set'=> (string)($cfg['stats_password'] ?? '') !== '',
         'php'               => PHP_VERSION,
     ]);
@@ -361,4 +363,57 @@ if (random_int(1, 50) === 1) {
     }
 }
 
-out(200, ['ok' => true, 'lead_id' => $leadId], 'ok', ['guid' => $guid]);
+// ---------- Ответ лендингу, затем уведомление в Telegram (не задерживает посетителя) ----------
+lead_log($cfg, 'ok', ['guid' => $guid]);
+http_response_code(200);
+echo json_encode(['ok' => true, 'lead_id' => $leadId], JSON_UNESCAPED_UNICODE);
+if (function_exists('litespeed_finish_request')) litespeed_finish_request();
+elseif (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+
+tg_notify($cfg, implode("\n", [
+    '✅ <b>Новый лид — ' . tg_esc($_SERVER['HTTP_HOST'] ?? 'it3.artro-flex.com') . '</b>',
+    '👤 Имя: ' . tg_esc($name),
+    '📞 Телефон: ' . tg_esc($phone),
+    '📨 Ответ Webvork: <code>' . tg_esc(mb_substr((string)$resp, 0, 500)) . '</code>',
+    '🎯 Кампания: ' . tg_esc(($LEAD['utm']['utm_campaign'] ?? '—') . ' / ' . ($LEAD['utm']['utm_source'] ?? '—')),
+    '🕒 ' . date('d.m.Y H:i') . ' (Рим)',
+]));
+exit;
+
+/** HTML-экранирование для parse_mode=HTML */
+function tg_esc(string $s): string
+{
+    return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+/** Сообщение в Telegram через Bot API. Ошибки только в журнал, на заявку не влияют. */
+function tg_notify(array $cfg, string $html): bool
+{
+    $t = $cfg['telegram'] ?? [];
+    $token = trim((string)($t['token'] ?? ''));
+    $chat  = trim((string)($t['chat_id'] ?? ''));
+    if ($token === '' || $chat === '' || !function_exists('curl_init')) return false;
+    $ch = curl_init('https://api.telegram.org/bot' . $token . '/sendMessage');
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => http_build_query([
+            'chat_id' => $chat, 'text' => $html, 'parse_mode' => 'HTML', 'disable_web_page_preview' => 'true',
+        ]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 8,
+        CURLOPT_CONNECTTIMEOUT => 4,
+    ]);
+    $resp = curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    $ok = $code === 200 && is_string($resp) && strpos($resp, '"ok":true') !== false;
+    if (!$ok) {
+        // Токен в журнал не пишем
+        error_log('lead.php: telegram failed: HTTP ' . $code . ' ' . mb_substr((string)$resp, 0, 300));
+        $dir = rtrim($cfg['data_dir'], '/\');
+        @file_put_contents("$dir/logs/" . date('Y-m') . '.log',
+            date('c') . ' [error] telegram_failed ' . json_encode(['http' => $code, 'resp' => mb_substr((string)$resp, 0, 300)], JSON_UNESCAPED_UNICODE) . PHP_EOL,
+            FILE_APPEND | LOCK_EX);
+    }
+    return $ok;
+}

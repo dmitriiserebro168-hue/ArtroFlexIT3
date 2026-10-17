@@ -77,6 +77,8 @@ return (function (): array {
 
         // MySQL для журнала заявок и аналитики (как в it2): ['host' => 'localhost', 'name' => …, 'user' => …, 'pass' => …]
         'db'              => is_array($secret['db'] ?? null) ? $secret['db'] : [],
+        // Telegram-бот: сообщение о каждом принятом лиде ['token' => '…', 'chat_id' => '-100…']
+        'telegram'        => is_array($secret['telegram'] ?? null) ? $secret['telegram'] : [],
         // Письма об ошибках отправки лидов (необязательно)
         'alert_email'     => $s('alert_email'),
         // Пароль дашборда /admin/stats.php (пусто — используется пароль редактора отзывов)

@@ -17,6 +17,12 @@ return array(
         'pass' => 'ПАРОЛЬ_ПОЛЬЗОВАТЕЛЯ_БАЗЫ',
     ),
 
+    // Telegram: сообщение о каждом лиде, принятом Webvork (имя, телефон, ответ Webvork, кампания)
+    'telegram' => array(
+        'token'   => '1234567890:AAH…',
+        'chat_id' => '-1001234567890',
+    ),
+
     // Письма об ошибках отправки лидов (необязательно)
     'alert_email'    => 'you@example.com',
     // Пароль дашборда https://it3.artro-flex.com/admin/stats.php (пусто — пароль редактора отзывов)
