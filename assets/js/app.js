@@ -22,7 +22,9 @@
     window.dataLayer.push(data);
   }
 
-  function loadPixel(id) {
+  // Пиксель Meta загружается сразу (Meta его «видит»), но в режиме согласия:
+  // до «Accetta» события не отправляются — Meta держит их, пока не придёт consent 'grant'.
+  function loadPixel(id, granted) {
     /* eslint-disable */
     !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
     n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
@@ -30,6 +32,7 @@
     t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
     document,'script','https://connect.facebook.net/en_US/fbevents.js');
     /* eslint-enable */
+    if (!granted) window.fbq('consent', 'revoke');
     window.fbq('init', id);
     window.fbq('track', 'PageView');
   }
@@ -37,10 +40,10 @@
   function initCookies() {
     var a = cfg.analytics || {};
     if (!a.metaPixelId || isDemo) return;
-    if (!a.requireCookieConsent) { loadPixel(a.metaPixelId); return; }
     var choice = storeGet('localStorage', 'cookie_consent');
-    if (choice === 'accept') { loadPixel(a.metaPixelId); return; }
-    if (choice === 'deny') return;
+    var granted = !a.requireCookieConsent || choice === 'accept';
+    loadPixel(a.metaPixelId, granted);
+    if (granted || choice === 'deny') return;
     var box = $('#cookie');
     box.hidden = false;
     $$('[data-cookie]', box).forEach(function (b) {
@@ -48,7 +51,7 @@
         var v = b.getAttribute('data-cookie');
         storeSet('localStorage', 'cookie_consent', v);
         box.hidden = true;
-        if (v === 'accept') loadPixel(a.metaPixelId);
+        if (v === 'accept' && window.fbq) window.fbq('consent', 'grant');
       });
     });
   }

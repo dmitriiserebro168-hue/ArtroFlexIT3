@@ -74,7 +74,8 @@
     window.fbq('track', 'Lead', { content_name: 'Artroflex Active', value: 39, currency: 'EUR' }, { eventID: leadId });
     try { if (ss) ss.setItem(key, '1'); } catch (e) {}
   }
-  function loadPixel(id) {
+  // Пиксель загружается сразу; до согласия события удерживаются (consent 'revoke'), после «Accetta» — уходят
+  function loadPixel(id, granted) {
     /* eslint-disable */
     !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
     n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
@@ -82,18 +83,19 @@
     t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
     document,'script','https://connect.facebook.net/en_US/fbevents.js');
     /* eslint-enable */
+    if (!granted) window.fbq('consent', 'revoke');
     window.fbq('init', id);
     window.fbq('track', 'PageView');
-    fireLead();
+    if (granted) fireLead(); // без согласия Lead не отправляем вовсе
   }
 
   var a = cfg.analytics || {};
   if (!a.metaPixelId) return;
-  if (!a.requireCookieConsent) { loadPixel(a.metaPixelId); return; }
   var choice = null;
   try { choice = localStorage.getItem('cookie_consent'); } catch (e) {}
-  if (choice === 'accept') { loadPixel(a.metaPixelId); return; }
-  if (choice === 'deny') return;
+  var granted = !a.requireCookieConsent || choice === 'accept';
+  loadPixel(a.metaPixelId, granted);
+  if (granted || choice === 'deny') return;
   var box = document.getElementById('cookie');
   box.hidden = false;
   box.querySelectorAll('[data-cookie]').forEach(function (b) {
@@ -101,7 +103,7 @@
       var v = b.getAttribute('data-cookie');
       try { localStorage.setItem('cookie_consent', v); } catch (e) {}
       box.hidden = true;
-      if (v === 'accept') loadPixel(a.metaPixelId);
+      if (v === 'accept' && window.fbq) { window.fbq('consent', 'grant'); fireLead(); }
     });
   });
 })();
