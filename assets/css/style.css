@@ -686,3 +686,23 @@ h1, h2, h3 { color: var(--ink); }
 /* Мало карточек — по центру */
 @media (min-width: 640px) { .slider__track { justify-content: center; } }
 @media (min-width: 900px) { .offer__img { max-width: 500px; } .offer { padding: 44px 48px; gap: 48px; } }
+
+/* ---------- Первый экран: список преимуществ рядом с упаковкой ---------- */
+.hero__product { align-items: center; }
+.hero__benefits { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 17px; line-height: 1.4; }
+.hero__benefits li { display: flex; gap: 10px; align-items: flex-start; }
+.hero__benefits .ico { width: 24px; height: 24px; font-size: 14px; margin-top: 1px; background: var(--trust); color: #fff; }
+@media (max-width: 767px) {
+  .hero .lead { font-size: 17px; }
+  .hero__product { grid-template-columns: 96px 1fr; align-items: start; }
+  .hero__product .media--product { max-width: 96px; margin-top: 4px; }
+  .hero__benefits { font-size: 15px; gap: 6px; line-height: 1.35; }
+  .hero__benefits .ico { width: 20px; height: 20px; font-size: 12px; }
+}
+@media (max-width: 767px) {
+  .hero { padding-top: 14px; }
+  .hero h1 { font-size: 29px; margin-bottom: .45em; }
+  .hero .lead { font-size: 16px; line-height: 1.45; margin-bottom: 12px; }
+  .hero__product { margin-bottom: 12px; }
+  .price-strip { margin-bottom: 12px; padding: 10px 14px; }
+}
