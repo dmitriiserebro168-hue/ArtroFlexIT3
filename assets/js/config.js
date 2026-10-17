@@ -86,7 +86,7 @@ window.LANDING_CONFIG = {
   },
 
   analytics: {
-    metaPixelId: "",          // пусто — пиксель не загружается
+    metaPixelId: "973449535833462", // пусто — пиксель не загружается
     // Пиксель грузится только после согласия в cookie-баннере.
     requireCookieConsent: true
   },
