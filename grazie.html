@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="it" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Richiesta inviata – Artroflex Active</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#173f35">
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/config.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <span class="topbar__brand" data-t="productName">Artroflex Active</span>
+  </div>
+</header>
+
+<main class="section section--form thanks">
+  <div class="wrap narrow-wrap">
+    <div class="success thanks__card" tabindex="-1" id="thanks">
+      <div class="success__ico" aria-hidden="true">✓</div>
+      <h1>Richiesta inviata con successo!</h1>
+      <p>Grazie! La tua richiesta è stata ricevuta. Un operatore di <span data-t="partnerName">Neo Elementum OÜ</span> potrà contattarti al numero indicato. Non hai ancora effettuato un acquisto.</p>
+      <p class="caption" id="thanks-phone-row" hidden>Numero indicato: <strong id="thanks-phone"></strong></p>
+      <ul class="thanks__steps">
+        <li><span class="steps__n">1</span><span>Tieni il telefono a portata di mano: ti chiameremo a breve.</span></li>
+        <li><span class="steps__n">2</span><span>L'operatore ti spiegherà il prodotto e le condizioni dell'offerta.</span></li>
+        <li><span class="steps__n">3</span><span>Decidi tu se ordinare. Pagamento alla consegna.</span></li>
+      </ul>
+      <p><a class="btn btn--ghost" href="./?notrack=1">← Torna alla pagina</a></p>
+    </div>
+  </div>
+</main>
+
+<div class="cookie" id="cookie" role="dialog" aria-labelledby="cookie-title" hidden>
+  <p id="cookie-title"><strong>Cookie</strong></p>
+  <p>Usiamo cookie tecnici e, solo con il tuo consenso, cookie di misurazione di Meta. <a href="privacy.html#cookie">Cookie Policy</a></p>
+  <div class="cookie__btns">
+    <button type="button" class="btn btn--ghost" data-cookie="deny">Rifiuta</button>
+    <button type="button" class="btn btn--ghost" data-cookie="accept">Accetta</button>
+  </div>
+</div>
+
+<script>
+/*
+ * Страница благодарности. Сюда попадают ТОЛЬКО после того, как сервер подтвердил приём заявки Webvork.
+ * Здесь пиксель Meta отправляет событие Lead (один раз на заявку, eventID = id заявки для дедупликации с CAPI).
+ * В Events Manager событие Lead можно также настроить как «посещение URL, содержащего /grazie».
+ */
+(function () {
+  'use strict';
+  var cfg = window.LANDING_CONFIG || {};
+  var t = cfg.text || {};
+  document.querySelectorAll('[data-t]').forEach(function (el) {
+    var v = t[el.getAttribute('data-t')];
+    if (v) el.textContent = v;
+  });
+
+  var q = new URLSearchParams(location.search);
+  var leadId = (q.get('lid') || '').replace(/[^\w-]/g, '').slice(0, 64);
+  var ss = null;
+  try { ss = window.sessionStorage; } catch (e) {}
+  var phone = '';
+  try { phone = ss ? (ss.getItem('lp_last_phone') || '') : ''; } catch (e) {}
+  if (phone) { document.getElementById('thanks-phone').textContent = phone; document.getElementById('thanks-phone-row').hidden = false; }
+  document.getElementById('thanks').focus();
+
+  // Lead — только один раз на заявку (обновление страницы не дублирует событие)
+  function fireLead() {
+    if (!window.fbq || !leadId) return;
+    var key = 'lp_lead_fired_' + leadId;
+    try { if (ss && ss.getItem(key)) return; } catch (e) {}
+    window.fbq('track', 'Lead', { content_name: 'Artroflex Active', value: 39, currency: 'EUR' }, { eventID: leadId });
+    try { if (ss) ss.setItem(key, '1'); } catch (e) {}
+  }
+  function loadPixel(id) {
+    /* eslint-disable */
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    /* eslint-enable */
+    window.fbq('init', id);
+    window.fbq('track', 'PageView');
+    fireLead();
+  }
+
+  var a = cfg.analytics || {};
+  if (!a.metaPixelId) return;
+  if (!a.requireCookieConsent) { loadPixel(a.metaPixelId); return; }
+  var choice = null;
+  try { choice = localStorage.getItem('cookie_consent'); } catch (e) {}
+  if (choice === 'accept') { loadPixel(a.metaPixelId); return; }
+  if (choice === 'deny') return;
+  var box = document.getElementById('cookie');
+  box.hidden = false;
+  box.querySelectorAll('[data-cookie]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var v = b.getAttribute('data-cookie');
+      try { localStorage.setItem('cookie_consent', v); } catch (e) {}
+      box.hidden = true;
+      if (v === 'accept') loadPixel(a.metaPixelId);
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -733,3 +733,10 @@ h1, h2, h3 { color: var(--ink); }
   .hero-stock { font-size: 15px; }
 }
 @media (max-width: 400px) { .hero-timer { justify-content: center; text-align: center; } }
+
+/* ---------- Страница благодарности ---------- */
+.thanks { min-height: calc(100vh - 56px); }
+.thanks__card { max-width: 680px; margin: 0 auto; }
+.thanks__card h1 { font-size: 30px; }
+.thanks__steps { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 12px; text-align: left; }
+.thanks__steps li { display: flex; gap: 14px; align-items: center; background: var(--bg-tint); border-radius: var(--radius); padding: 14px 16px; }

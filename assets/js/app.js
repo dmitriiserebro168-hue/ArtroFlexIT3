@@ -20,10 +20,6 @@
     var data = { event: name };
     for (var k in params || {}) data[k] = params[k];
     window.dataLayer.push(data);
-    if (window.fbq && name === 'lead_accepted') {
-      // Заявка = Lead, никогда не Purchase. eventID — для дедупликации с Conversions API.
-      window.fbq('track', 'Lead', { content_name: cfg.offerId }, { eventID: params.lead_id });
-    }
   }
 
   function loadPixel(id) {
@@ -589,6 +585,12 @@
         s.focus();
         done = true;
         updateSticky();
+        // Переход на страницу благодарности: там пиксель Meta отправляет Lead (только для принятых заявок).
+        // Небольшая пауза — чтобы аналитика успела записать «заявка принята».
+        try { sessionStorage.setItem('lp_last_phone', '+39 ' + prettyPhone(digits)); } catch (e) {}
+        if (!isDemo && cfg.thanksPage !== false) {
+          setTimeout(function () { location.href = 'grazie.html?lid=' + encodeURIComponent(d.lead_id) + (location.search.indexOf('notrack=1') > -1 ? '&notrack=1' : ''); }, 400);
+        }
       }).catch(function (err) {
         track('lead_error', { reason: String(err && err.message || err).slice(0, 40) });
         formErr.textContent = (err && err.message === 'rate_limited')
