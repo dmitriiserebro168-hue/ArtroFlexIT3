@@ -65,7 +65,37 @@
       <p class="hero__product-note" data-claim-alt="discount">Scopri le condizioni dell'offerta attuale.</p>
 
 
-      <a class="btn btn--cta" href="#richiesta" data-cta="hero" data-track="cta-hero">Richiedi una chiamata</a>
+      <!-- Форма заявки на первом экране (дублирует основную форму внизу) -->
+      <form class="hero-form" data-lead-form="hero" action="api/lead.php" method="post" novalidate>
+        <div class="field">
+          <label for="h-name">Nome</label>
+          <input id="h-name" name="name" type="text" autocomplete="name" autocapitalize="words" maxlength="60" placeholder="Es. Maria Rossi" required aria-describedby="h-name-err">
+          <p class="field__err" id="h-name-err" data-err="name" hidden>Inserisci il tuo nome.</p>
+        </div>
+        <div class="field">
+          <label for="h-phone">Numero di telefono</label>
+          <div class="phone">
+            <span class="phone__pre" aria-hidden="true"><span class="phone__flag"></span>+39</span>
+            <input id="h-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="18" placeholder="Es. 333 123 4567" required aria-describedby="h-phone-err">
+          </div>
+          <p class="field__err" id="h-phone-err" data-err="phone" hidden>Inserisci un numero di telefono valido.</p>
+        </div>
+        <div class="hp" aria-hidden="true">
+          <label for="h-website">Lascia vuoto</label>
+          <input id="h-website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="field field--check" data-consent-field>
+          <input id="h-consent" name="consent" type="checkbox" value="1" checked aria-describedby="h-consent-err">
+          <label for="h-consent">Ho letto l'<a data-track="link-privacy" href="privacy.html" target="_blank" rel="noopener">Informativa privacy</a> e chiedo di essere richiamato da <span data-t="callerName">Geberich</span> per ricevere informazioni su questa offerta.</label>
+          <p class="field__err" id="h-consent-err" data-err="consent" hidden>Per inviare la richiesta conferma di aver letto l'informativa</p>
+        </div>
+        <p class="form-error" data-form-error role="alert" hidden>Non è stato possibile inviare la richiesta. Riprova.</p>
+        <p class="hero-form__ok" data-form-ok role="status" hidden>✓ Richiesta inviata! Ti chiameremo a breve.</p>
+        <button class="btn btn--cta btn--block" type="submit" data-track="btn-submit-hero">
+          <span class="btn__label">Richiedi una chiamata</span>
+          <span class="btn__busy" aria-hidden="true">Invio in corso…</span>
+        </button>
+      </form>
       <p class="btn-note">Gratuito e senza impegno. La richiesta non è un acquisto.</p>
 
       <ul class="trust-row" aria-label="Condizioni dell'offerta">
@@ -334,11 +364,11 @@
       </ul>
       </div>
 
-      <form id="lead-form" action="api/lead.php" method="post" novalidate>
+      <form id="lead-form" data-lead-form="main" action="api/lead.php" method="post" novalidate>
         <div class="field">
           <label for="f-name">Nome</label>
           <input id="f-name" name="name" type="text" autocomplete="name" autocapitalize="words" maxlength="60" placeholder="Es. Maria Rossi" required aria-describedby="f-name-err">
-          <p class="field__err" id="f-name-err" hidden>Inserisci il tuo nome.</p>
+          <p class="field__err" id="f-name-err" data-err="name" hidden>Inserisci il tuo nome.</p>
         </div>
 
         <div class="field">
@@ -348,7 +378,7 @@
             <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="18" placeholder="Es. 333 123 4567" required aria-describedby="f-phone-hint f-phone-err">
           </div>
           <p class="field__hint" id="f-phone-hint">Il prefisso +39 è già inserito. Inserisci il numero: 10–11 cifre.</p>
-          <p class="field__err" id="f-phone-err" hidden>Inserisci un numero di telefono valido.</p>
+          <p class="field__err" id="f-phone-err" data-err="phone" hidden>Inserisci un numero di telefono valido.</p>
         </div>
 
         <!-- антиспам: поле скрыто от людей -->
@@ -360,10 +390,10 @@
         <div class="field field--check" data-consent-field>
           <input id="f-consent" name="consent" type="checkbox" value="1" checked aria-describedby="f-consent-err">
           <label for="f-consent">Ho letto l'<a data-track="link-privacy" href="privacy.html" target="_blank" rel="noopener">Informativa privacy</a> e chiedo di essere richiamato da <span data-t="callerName">Geberich</span> per ricevere informazioni su questa offerta.</label>
-          <p class="field__err" id="f-consent-err" hidden>Per inviare la richiesta conferma di aver letto l'informativa</p>
+          <p class="field__err" id="f-consent-err" data-err="consent" hidden>Per inviare la richiesta conferma di aver letto l'informativa</p>
         </div>
 
-        <p class="form-error" id="form-error" role="alert" hidden>Non è stato possibile inviare la richiesta. Riprova.</p>
+        <p class="form-error" id="form-error" data-form-error role="alert" hidden>Non è stato possibile inviare la richiesta. Riprova.</p>
 
         <button class="btn btn--cta btn--block" type="submit" id="f-submit" data-track="btn-submit">
           <span class="btn__label">Richiedi una chiamata</span>

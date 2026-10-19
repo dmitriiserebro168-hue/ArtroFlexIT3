@@ -740,3 +740,16 @@ h1, h2, h3 { color: var(--ink); }
 .thanks__card h1 { font-size: 30px; }
 .thanks__steps { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 12px; text-align: left; }
 .thanks__steps li { display: flex; gap: 14px; align-items: center; background: var(--bg-tint); border-radius: var(--radius); padding: 14px 16px; }
+
+/* ---------- Форма заявки на первом экране ---------- */
+.hero-form {
+  background: #fff; border: 1px solid var(--line); border-top: 5px solid var(--cta);
+  border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 18px 16px; margin: 0 0 4px;
+}
+.hero-form .field { margin-bottom: 14px; }
+.hero-form .field label { font-size: 17px; margin-bottom: 6px; }
+.hero-form .field input[type="text"], .hero-form .phone { min-height: 54px; }
+.hero-form .field--check label { font-size: 15px; }
+.hero-form .btn--cta { width: 100%; }
+.hero-form__ok { margin: 0 0 12px; padding: 12px 14px; border-radius: 10px; background: var(--trust-bg); color: var(--trust); font-weight: 700; }
+@media (min-width: 768px) { .hero-form { padding: 22px 24px 18px; } .hero .hero-form .btn--cta { width: 100%; min-width: 0; } }

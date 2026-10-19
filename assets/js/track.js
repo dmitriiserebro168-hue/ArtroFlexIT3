@@ -79,24 +79,21 @@
     }
     window.addEventListener('scroll', onScroll, { passive: true });
 
-    // Форма: первый фокус в полях, попытки отправки, ошибки, успех
-    var form = document.getElementById('lead-form');
-    if (form) {
+    // Формы (на первом экране и внизу): первый фокус в полях, попытки отправки, ошибки, успех
+    document.querySelectorAll('form[data-lead-form]').forEach(function (form) {
       form.addEventListener('focusin', function (e) {
-        if (e.target.id === 'f-name') pushOnce('f:name', 'form', 'focus-name');
-        if (e.target.id === 'f-phone') pushOnce('f:phone', 'form', 'focus-phone');
+        if (e.target.name === 'name') pushOnce('f:name', 'form', 'focus-name');
+        if (e.target.name === 'phone') pushOnce('f:phone', 'form', 'focus-phone');
       });
       form.addEventListener('submit', function () { push('form', 'submit'); }, true);
       // Ошибки показываются снятием атрибута hidden
-      [['f-name-err', 'error-name'], ['f-phone-err', 'error-phone'], ['f-consent-err', 'error-consent'], ['form-error', 'error-alert']].forEach(function (p) {
-        var n = document.getElementById(p[0]);
+      [['[data-err="name"]', 'error-name'], ['[data-err="phone"]', 'error-phone'], ['[data-err="consent"]', 'error-consent'], ['[data-form-error]', 'error-alert']].forEach(function (p) {
+        var n = form.querySelector(p[0]);
         if (n) new MutationObserver(function () { if (!n.hidden) push('form', p[1]); })
           .observe(n, { attributes: true, attributeFilter: ['hidden'] });
       });
-      var ok = document.getElementById('success');
-      if (ok) new MutationObserver(function () { if (!ok.hidden) pushOnce('f:ok', 'form', 'lead-ok'); })
-        .observe(ok, { attributes: true, attributeFilter: ['hidden'] });
-    }
+    });
+    document.addEventListener('lp:lead-ok', function () { pushOnce('f:ok', 'form', 'lead-ok'); flush(); });
 
     // Время на странице (только пока вкладка видна) и уход
     function leave() {

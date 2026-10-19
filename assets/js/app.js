@@ -456,89 +456,91 @@
     return d.replace(/^(\d{3})(\d{1,3})(\d*)$/, function (m, a, b, c) { return [a, b, c].filter(Boolean).join(' '); });
   }
 
-  /* ---------- Форма ---------- */
-  function initForm(params) {
-    var form = $('#lead-form');
-    if (!form) return;
-    var name = $('#f-name'), phone = $('#f-phone'), consent = $('#f-consent');
-    var btn = $('#f-submit'), formErr = $('#form-error');
-    var requireConsent = !(cfg.form && cfg.form.requireConsent === false);
-    if (!requireConsent) $('[data-consent-field]').remove();
+  /* ---------- Формы заявки (на первом экране и внизу страницы) ---------- */
+  function uuid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+  }
 
-    var started = false, busy = false, pending = null;
+  function sendLead(payload) {
+    if (isDemo) {
+      return new Promise(function (res, rej) {
+        setTimeout(function () {
+          if (/^errore$/i.test(payload.name)) rej(new Error('demo'));
+          else res({ ok: true, lead_id: 'demo-' + payload.request_id.slice(0, 8) });
+        }, 900);
+      });
+    }
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var t = ctrl && setTimeout(function () { ctrl.abort(); }, (cfg.form && cfg.form.timeoutMs) || 15000);
+    return fetch(cfg.form.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: ctrl ? ctrl.signal : undefined,
+      credentials: 'same-origin'
+    }).then(function (r) {
+      if (t) clearTimeout(t);
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok || d.ok !== true || !d.lead_id) throw new Error(d.error || ('http_' + r.status));
+        return d;
+      });
+    }, function (e) { if (t) clearTimeout(t); throw e; });
+  }
+
+  var formStarted = false, leadSent = false;
+
+  function initForm(form, params) {
+    var q = function (s) { return form.querySelector(s); };
+    var kind = form.getAttribute('data-lead-form');
+    var name = q('[name="name"]'), phone = q('[name="phone"]'), consent = q('[name="consent"]');
+    var btn = q('[type="submit"]'), formErr = q('[data-form-error]');
+    var err = { name: q('[data-err="name"]'), phone: q('[data-err="phone"]'), consent: q('[data-err="consent"]') };
+    var requireConsent = !(cfg.form && cfg.form.requireConsent === false);
+    if (!requireConsent) { var cf = q('[data-consent-field]'); if (cf) cf.remove(); consent = null; }
+    var busy = false, pending = null;
 
     form.addEventListener('input', function () {
-      if (!started) { started = true; track('form_start'); }
+      if (!formStarted) { formStarted = true; track('form_start', { form: kind }); }
     });
 
     function setErr(input, errEl, show) {
+      if (!input || !errEl) return;
       errEl.hidden = !show;
       input.setAttribute('aria-invalid', show ? 'true' : 'false');
       var fld = input.closest('.field');
       if (fld) { fld.classList.toggle('is-invalid', show); if (show) fld.classList.remove('is-valid'); }
     }
-    var nameErr = $('#f-name-err'), phoneErr = $('#f-phone-err');
     var phoneField = phone.closest('.field');
 
-    name.addEventListener('input', function () { setErr(name, nameErr, false); });
-    name.addEventListener('blur', function () { if (name.value) setErr(name, nameErr, !validName(name.value)); });
+    name.addEventListener('input', function () { setErr(name, err.name, false); });
+    name.addEventListener('blur', function () { if (name.value) setErr(name, err.name, !validName(name.value)); });
 
     phone.addEventListener('input', function () {
       // Человек набирает префикс вручную («+», «+3», «+39», «0», «00», «003») — ждём следующую цифру
       if (/^(\+|\+3|\+39|0|00|003)$/.test(phone.value.replace(/\s/g, ''))) {
-        phoneField.classList.remove('is-valid'); setErr(phone, phoneErr, false); return;
+        phoneField.classList.remove('is-valid'); setErr(phone, err.phone, false); return;
       }
       var d = cleanPhone(phone.value);
       if (phone.value.replace(/\s/g, '') !== d) phone.value = d;
       var ok = !!normPhone(d);
       phoneField.classList.toggle('is-valid', ok);
-      setErr(phone, phoneErr, !ok && d.length >= IT_MAX);
+      setErr(phone, err.phone, !ok && d.length >= IT_MAX);
     });
     phone.addEventListener('blur', function () {
       var d = cleanPhone(phone.value);
       if (d) phone.value = prettyPhone(d);
       var ok = !!normPhone(d);
       phoneField.classList.toggle('is-valid', ok);
-      setErr(phone, phoneErr, !!d && !ok);
+      setErr(phone, err.phone, !!d && !ok);
     });
-    if (requireConsent) consent.addEventListener('change', function () { if (consent.checked) setErr(consent, $('#f-consent-err'), false); });
-
-    function uuid() {
-      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-      });
-    }
-
-    function send(payload) {
-      if (isDemo) {
-        return new Promise(function (res, rej) {
-          setTimeout(function () {
-            if (/^errore$/i.test(payload.name)) rej(new Error('demo'));
-            else res({ ok: true, lead_id: 'demo-' + payload.request_id.slice(0, 8) });
-          }, 900);
-        });
-      }
-      var ctrl = window.AbortController ? new AbortController() : null;
-      var t = ctrl && setTimeout(function () { ctrl.abort(); }, (cfg.form && cfg.form.timeoutMs) || 15000);
-      return fetch(cfg.form.endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: ctrl ? ctrl.signal : undefined,
-        credentials: 'same-origin'
-      }).then(function (r) {
-        if (t) clearTimeout(t);
-        return r.json().catch(function () { return {}; }).then(function (d) {
-          if (!r.ok || d.ok !== true || !d.lead_id) throw new Error(d.error || ('http_' + r.status));
-          return d;
-        });
-      }, function (e) { if (t) clearTimeout(t); throw e; });
-    }
+    if (consent) consent.addEventListener('change', function () { if (consent.checked) setErr(consent, err.consent, false); });
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      if (busy) return; // защита от двойной отправки
+      if (busy || leadSent) return; // защита от двойной отправки (в том числе из второй формы)
       formErr.hidden = true;
 
       var n = cleanName(name.value);
@@ -546,10 +548,10 @@
       var p = digits ? '+39' + digits : null;   // отправляем в формате +39…, как it2
       var badName = !validName(n);
       var badPhone = !p;
-      var badConsent = requireConsent && !consent.checked;
-      setErr(name, $('#f-name-err'), badName);
-      setErr(phone, $('#f-phone-err'), badPhone);
-      if (requireConsent) setErr(consent, $('#f-consent-err'), badConsent);
+      var badConsent = !!consent && !consent.checked;
+      setErr(name, err.name, badName);
+      setErr(phone, err.phone, badPhone);
+      if (consent) setErr(consent, err.consent, badConsent);
       if (badName || badPhone || badConsent) {
         (badName ? name : badPhone ? phone : consent).focus();
         return;
@@ -559,53 +561,66 @@
       var key = n + '|' + p;
       if (!pending || pending.key !== key) pending = { key: key, id: uuid() };
 
+      var website = q('[name="website"]');
       var payload = {
         request_id: pending.id,
         name: n,
         phone: p,
-        consent: requireConsent ? consent.checked : null,
+        consent: consent ? consent.checked : null,
         privacy_version: cfg.form && cfg.form.privacyVersion,
         offer_id: cfg.offerId,
         landing_version: cfg.landingVersion,
-        // Чтобы оператор знал, действует ли персональная скидка для этого клиента
         offer_expires_at: personalEnd ? personalEnd.toISOString() : null,
+        form: kind,
         params: params,
-        website: $('#f-website').value
+        website: website ? website.value : ''
       };
 
       busy = true;
       btn.setAttribute('aria-busy', 'true');
       btn.disabled = true;
-      track('form_submit');
+      track('form_submit', { form: kind });
 
-      send(payload).then(function (d) {
-        track('lead_accepted', { lead_id: d.lead_id, duplicate: !!d.duplicate });
-        $('#success-phone').textContent = '+39 ' + prettyPhone(digits);
-        $('#form-card').hidden = true;
-        var s = $('#success');
-        s.hidden = false;
-        s.focus();
+      sendLead(payload).then(function (d) {
+        leadSent = true;
+        track('lead_accepted', { lead_id: d.lead_id, duplicate: !!d.duplicate, form: kind });
+        document.dispatchEvent(new CustomEvent('lp:lead-ok', { detail: { form: kind } }));
+        var shown = '+39 ' + prettyPhone(digits);
+        if (kind === 'main') {
+          $('#success-phone').textContent = shown;
+          $('#form-card').hidden = true;
+          var s = $('#success');
+          s.hidden = false;
+          s.focus();
+        } else {
+          var okMsg = q('[data-form-ok]');
+          if (okMsg) okMsg.hidden = false;
+        }
         done = true;
         updateSticky();
         // Переход на страницу благодарности: там пиксель Meta отправляет Lead (только для принятых заявок).
         // Небольшая пауза — чтобы аналитика успела записать «заявка принята».
-        try { sessionStorage.setItem('lp_last_phone', '+39 ' + prettyPhone(digits)); } catch (e) {}
+        try { sessionStorage.setItem('lp_last_phone', shown); } catch (e2) {}
         if (!isDemo && cfg.thanksPage !== false) {
-          setTimeout(function () { location.href = 'grazie.html?lid=' + encodeURIComponent(d.lead_id) + (location.search.indexOf('notrack=1') > -1 ? '&notrack=1' : ''); }, 400);
+          setTimeout(function () {
+            location.href = 'grazie.html?lid=' + encodeURIComponent(d.lead_id) + (location.search.indexOf('notrack=1') > -1 ? '&notrack=1' : '');
+          }, 400);
         }
-      }).catch(function (err) {
-        track('lead_error', { reason: String(err && err.message || err).slice(0, 40) });
-        formErr.textContent = (err && err.message === 'rate_limited')
-          ? 'Troppe richieste in poco tempo. Riprova tra qualche minuto.'
-          : 'Non è stato possibile inviare la richiesta. Riprova.';
+      }).catch(function (err2) {
+        track('lead_error', { reason: String(err2 && err2.message || err2).slice(0, 40), form: kind });
+        formErr.textContent = 'Non è stato possibile inviare la richiesta. Riprova.';
         formErr.hidden = false;
         formErr.scrollIntoView({ block: 'center' });
       }).then(function () {
         busy = false;
         btn.removeAttribute('aria-busy');
-        btn.disabled = false;
+        btn.disabled = leadSent;
       });
     });
+  }
+
+  function initForms(params) {
+    $$('form[data-lead-form]').forEach(function (f) { initForm(f, params); });
   }
 
   /* ---------- Старт ---------- */
@@ -617,7 +632,7 @@
   initVideos();
   initFaq();
   initCta();
-  initForm(captureParams());
+  initForms(captureParams());
   initCookies();
   track('page_view', { landing_version: cfg.landingVersion });
 })();

@@ -48,7 +48,6 @@ $REGISTRY = [
     'cta-topbar'       => ['Кнопка', '«Richiedi una chiamata» в шапке'],
     'sec-hero'         => ['Секция', 'Первый экран'],
     'price-hero'       => ['Цена', 'Блок цены −50% (первый экран)'],
-    'cta-hero'         => ['Кнопка', '«Richiedi una chiamata» (первый экран)'],
     'img-hero'         => ['Картинка', 'Иллюстрация колена (первый экран)'],
     'sec-solution'     => ['Секция', '«Scopri Artroflex Active»'],
     'sec-mechanism'    => ['Секция', '«Dolore e rigidità? → Torna a muoverti»'],
@@ -75,7 +74,8 @@ $REGISTRY = [
     'cta-final'        => ['Кнопка', '«Richiedi una chiamata» (финал)'],
     'sec-form'         => ['Секция', 'Форма заявки'],
     'link-privacy'     => ['Ссылка', 'Informativa privacy (в согласии)'],
-    'btn-submit'       => ['Кнопка', '«Richiedi una chiamata» (отправка формы)'],
+    'btn-submit-hero'  => ['Кнопка', '«Richiedi una chiamata» (форма на первом экране)'],
+    'btn-submit'       => ['Кнопка', '«Richiedi una chiamata» (форма внизу)'],
     'cta-sticky'       => ['Кнопка', 'Липкая кнопка внизу экрана'],
 ];
 $SECTIONS = array_values(array_filter(array_keys($REGISTRY), fn($k) => strpos($k, 'sec-') === 0));
@@ -288,7 +288,7 @@ function rome($utc) { $d = new DateTime((string)$utc, new DateTimeZone('UTC')); 
     $visits    = (int)q($pdo, "SELECT COUNT(DISTINCT pv) FROM track_event WHERE type='load' AND $where", $params)->fetchColumn();
     $avgTime   = (float)q($pdo, "SELECT AVG(m) FROM (SELECT MAX(val) m FROM track_event WHERE type='leave' AND $where GROUP BY pv) x", $params)->fetchColumn();
     $avgDepth  = (float)q($pdo, "SELECT AVG(m) FROM (SELECT MAX(val) m FROM track_event WHERE type='depth' AND $where GROUP BY pv) x", $params)->fetchColumn();
-    $ctaVisits = (int)q($pdo, "SELECT COUNT(DISTINCT pv) FROM track_event WHERE type='click' AND (el LIKE 'cta-%' OR el='btn-submit') AND $where", $params)->fetchColumn();
+    $ctaVisits = (int)q($pdo, "SELECT COUNT(DISTINCT pv) FROM track_event WHERE type='click' AND (el LIKE 'cta-%' OR el LIKE 'btn-submit%') AND $where", $params)->fetchColumn();
 
     $form = [];
     foreach (['focus-name', 'focus-phone', 'submit', 'error-phone', 'error-name', 'error-consent', 'error-alert', 'lead-ok'] as $f) {
