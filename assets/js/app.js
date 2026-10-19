@@ -79,7 +79,6 @@
       if (v != null && v !== '') el.textContent = v;
       if (el.classList.contains('ph') && v && v.indexOf('[') === -1) el.classList.remove('ph');
     });
-    if (t.productName) document.title = t.productName + ' – Informazioni e offerta in Italia';
   }
 
   function applyClaims() {

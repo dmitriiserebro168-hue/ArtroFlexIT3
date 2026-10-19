@@ -50,7 +50,7 @@ window.LANDING_CONFIG = {
     fallbackStock: 17,
     // Персональная скидка: действует N часов с ПЕРВОГО захода посетителя (запоминается в браузере,
     // при повторном заходе таймер продолжает отсчёт, а не начинается заново). 0 — общая дата из api/config.php.
-    personalHours: 5,
+    personalHours: 0,   // таймер убран по решению заказчика; акция действует до offer.ends_at в api/config.php
     // Что делать после окончания акции: "end" — скрыть скидку, таймер и остаток, показать сообщение.
     onExpire: "end"
   },
@@ -63,8 +63,8 @@ window.LANDING_CONFIG = {
     problemWorsens: true,    // «la situazione può peggiorare»
     stats: true,             // 12 000 clienti / 15 anni / 98% riordini
     discount: true,          // скидка 50%: 78 € → 39 €
-    stock: true,             // «Restano 17 confezioni»
-    timer: true,             // таймер окончания акции
+    stock: false,             // «Restano 17 confezioni»
+    timer: false,             // таймер окончания акции
     call10min: true,         // «Ti richiamiamo entro 10 minuti»
     moneyBack: true,         // «Se non ti soddisfa, ti rimborsiamo entro X giorni»
     cod: true,               // «Pagamento alla consegna»
