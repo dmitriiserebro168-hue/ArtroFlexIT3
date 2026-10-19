@@ -79,21 +79,31 @@
     }
     window.addEventListener('scroll', onScroll, { passive: true });
 
-    // Формы (на первом экране и внизу): первый фокус в полях, попытки отправки, ошибки, успех
+    // Формы (на первом экране и внизу): первый фокус в полях, попытки отправки, ошибки, успех.
+    // Пишутся и общие события (focus-name…), и события конкретной формы (hero-focus-name / main-focus-name…).
+    function formPush(kind, ev, once) {
+      if (once) { pushOnce('f:' + ev, 'form', ev); pushOnce('f:' + kind + ':' + ev, 'form', kind + '-' + ev); }
+      else { push('form', ev); push('form', kind + '-' + ev); }
+    }
     document.querySelectorAll('form[data-lead-form]').forEach(function (form) {
+      var kind = form.getAttribute('data-lead-form') === 'hero' ? 'hero' : 'main';
       form.addEventListener('focusin', function (e) {
-        if (e.target.name === 'name') pushOnce('f:name', 'form', 'focus-name');
-        if (e.target.name === 'phone') pushOnce('f:phone', 'form', 'focus-phone');
+        if (e.target.name === 'name') formPush(kind, 'focus-name', true);
+        if (e.target.name === 'phone') formPush(kind, 'focus-phone', true);
       });
-      form.addEventListener('submit', function () { push('form', 'submit'); }, true);
+      form.addEventListener('submit', function () { formPush(kind, 'submit', false); }, true);
       // Ошибки показываются снятием атрибута hidden
       [['[data-err="name"]', 'error-name'], ['[data-err="phone"]', 'error-phone'], ['[data-err="consent"]', 'error-consent'], ['[data-form-error]', 'error-alert']].forEach(function (p) {
         var n = form.querySelector(p[0]);
-        if (n) new MutationObserver(function () { if (!n.hidden) push('form', p[1]); })
+        if (n) new MutationObserver(function () { if (!n.hidden) formPush(kind, p[1], false); })
           .observe(n, { attributes: true, attributeFilter: ['hidden'] });
       });
     });
-    document.addEventListener('lp:lead-ok', function () { pushOnce('f:ok', 'form', 'lead-ok'); flush(); });
+    document.addEventListener('lp:lead-ok', function (e) {
+      var kind = e.detail && e.detail.form === 'hero' ? 'hero' : 'main';
+      formPush(kind, 'lead-ok', true);
+      flush();
+    });
 
     // Время на странице (только пока вкладка видна) и уход
     function leave() {

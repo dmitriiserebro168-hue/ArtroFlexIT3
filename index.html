@@ -47,8 +47,8 @@
       <p class="lead"><span data-t="productName">Artroflex Active</span>: è un complesso innovativo sviluppato per mantenere la salute delle articolazioni. Contiene condroitin solfato e collagene marino — due componenti chiave che aiutano ad alleviare il disagio e a ripristinare i tessuti articolari.</p>
 
       <div class="hero__product">
-        <picture class="media media--product" style="aspect-ratio:800/694"><img src="assets/img/prodotto-800.webp" srcset="assets/img/prodotto-400.webp 400w, assets/img/prodotto-800.webp 800w" sizes="120px" width="800" height="694" alt="Flacone e confezione di Artroflex Active, 30 capsule" fetchpriority="high"></picture>
-        <ul class="hero__benefits">
+        <picture class="media media--product" data-track="img-product-hero" style="aspect-ratio:800/694"><img src="assets/img/prodotto-800.webp" srcset="assets/img/prodotto-400.webp 400w, assets/img/prodotto-800.webp 800w" sizes="120px" width="800" height="694" alt="Flacone e confezione di Artroflex Active, 30 capsule" fetchpriority="high"></picture>
+        <ul class="hero__benefits" data-track="list-hero">
           <li><span class="ico" aria-hidden="true">✓</span>Tutti gli ingredienti sono naturali</li>
           <li><span class="ico" aria-hidden="true">✓</span>Allevia il dolore alle articolazioni e riduce i gonfiori</li>
           <li><span class="ico" aria-hidden="true">✓</span>Favorisce la rigenerazione dei tessuti articolari</li>
@@ -66,7 +66,7 @@
 
 
       <!-- Форма заявки на первом экране (дублирует основную форму внизу) -->
-      <form class="hero-form" data-lead-form="hero" action="api/lead.php" method="post" novalidate>
+      <form class="hero-form" data-lead-form="hero" data-track="form-hero" action="api/lead.php" method="post" novalidate>
         <div class="field">
           <label for="h-name">Nome</label>
           <input id="h-name" name="name" type="text" autocomplete="name" autocapitalize="words" maxlength="60" placeholder="Es. Maria Rossi" required aria-describedby="h-name-err">
@@ -98,7 +98,7 @@
       </form>
       <p class="btn-note">Gratuito e senza impegno. La richiesta non è un acquisto.</p>
 
-      <ul class="trust-row" aria-label="Condizioni dell'offerta">
+      <ul class="trust-row" aria-label="Condizioni dell'offerta" data-track="trust-hero">
         <li data-claim="cod"><span class="ico" aria-hidden="true">✓</span>Pagamento alla consegna</li>
         <li data-claim="noPrepay"><span class="ico" aria-hidden="true">✓</span>Nessun pagamento anticipato</li>
         <li data-claim="moneyBack"><span class="ico" aria-hidden="true">✓</span>Garanzia di rimborso</li>
@@ -120,13 +120,13 @@
     <h2 id="solution-title" class="center">Scopri <span data-t="productName">Artroflex Active</span></h2>
 
     <div class="two-col two-col--center">
-      <picture class="media media--product" style="aspect-ratio:800/694"><img src="assets/img/prodotto-800.webp" srcset="assets/img/prodotto-400.webp 400w, assets/img/prodotto-800.webp 800w" sizes="(min-width: 768px) 480px, 100vw" width="800" height="694" loading="lazy" alt="Flacone e confezione di Artroflex Active, 30 capsule"></picture>
+      <picture class="media media--product" data-track="img-product" style="aspect-ratio:800/694"><img src="assets/img/prodotto-800.webp" srcset="assets/img/prodotto-400.webp 400w, assets/img/prodotto-800.webp 800w" sizes="(min-width: 768px) 480px, 100vw" width="800" height="694" loading="lazy" alt="Flacone e confezione di Artroflex Active, 30 capsule"></picture>
       <div class="prose">
         <p>ArtroFlex Active è stato sviluppato sulla base di ingredienti attivi completamente naturali. Grazie all'azione del solfato di glucosamina e di altri componenti naturali, il prodotto agisce direttamente sulla capsula articolare, favorendo il recupero del tessuto cartilagineo danneggiato.</p>
       </div>
     </div>
 
-    <div class="cards cards--3">
+    <div class="cards cards--3" data-track="cards-solution">
       <article class="card">
         <span class="card__num" aria-hidden="true">1</span>
         <h3>Formula completa</h3>
@@ -179,7 +179,7 @@
 <!-- ============ БЛОК 5. СОСТАВ И ПРИМЕНЕНИЕ ============ -->
 <section class="section section--tint" aria-labelledby="composition-title" data-track="sec-composition">
   <div class="wrap">
-      <div class="notice">
+      <div class="notice" data-track="block-study">
         <h3>Risultati dello studio clinico di ArtroFlex Active</h3>
         <p>Nell'autunno 2014 è stato condotto uno studio clinico sull'efficacia del preparato ArtroFlex Active con la partecipazione di oltre 5000 persone che soffrivano di varie malattie articolari. Per 40 giorni i partecipanti hanno assunto capsule due volte al giorno: 2 capsule prima di pranzo e 1 capsula prima di cena.</p>
         <p>I risultati dello studio hanno superato persino le aspettative dei medici:</p>
@@ -262,7 +262,7 @@
 <section class="section" aria-labelledby="terms-title" data-track="sec-terms">
   <div class="wrap">
     <h2 id="terms-title" class="center">Consegna, pagamento e garanzia</h2>
-    <div class="cards cards--3">
+    <div class="cards cards--3" data-track="cards-terms">
       <article class="card">
         <span class="card__ico" aria-hidden="true">🚚</span>
         <h3>Consegna</h3>
@@ -364,7 +364,7 @@
       </ul>
       </div>
 
-      <form id="lead-form" data-lead-form="main" action="api/lead.php" method="post" novalidate>
+      <form id="lead-form" data-lead-form="main" data-track="form-main" action="api/lead.php" method="post" novalidate>
         <div class="field">
           <label for="f-name">Nome</label>
           <input id="f-name" name="name" type="text" autocomplete="name" autocapitalize="words" maxlength="60" placeholder="Es. Maria Rossi" required aria-describedby="f-name-err">
@@ -425,7 +425,7 @@
     <div class="footer__grid">
       <div>
         <h2 class="footer__h">Informazioni</h2>
-        <ul class="footer__links">
+        <ul class="footer__links" data-track="footer-links">
           <li><a href="termini.html#offerta">Condizioni dell'offerta</a></li>
           <li><a href="termini.html#consegna">Consegna e pagamento</a></li>
           <li><a href="termini.html#resi">Garanzia e resi</a></li>

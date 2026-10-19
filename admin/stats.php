@@ -47,12 +47,20 @@ function h($s): string { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'
 $REGISTRY = [
     'cta-topbar'       => ['Кнопка', '«Richiedi una chiamata» в шапке'],
     'sec-hero'         => ['Секция', 'Первый экран'],
+    'img-product-hero' => ['Картинка', 'Упаковка (первый экран)'],
+    'list-hero'        => ['Список', 'Преимущества рядом с упаковкой'],
     'price-hero'       => ['Цена', 'Блок цены −50% (первый экран)'],
+    'form-hero'        => ['Форма', 'Форма заявки на первом экране (клики по полям)'],
+    'btn-submit-hero'  => ['Кнопка', '«Richiedi una chiamata» (форма на первом экране)'],
+    'trust-hero'       => ['Список', 'Оплата при получении / без предоплаты / гарантия'],
     'img-hero'         => ['Картинка', 'Иллюстрация колена (первый экран)'],
     'sec-solution'     => ['Секция', '«Scopri Artroflex Active»'],
+    'img-product'      => ['Картинка', 'Упаковка («Scopri Artroflex Active»)'],
+    'cards-solution'   => ['Карточки', 'Formula completa / Vitamina C / Uso semplice'],
     'sec-mechanism'    => ['Секция', '«Dolore e rigidità? → Torna a muoverti»'],
     'img-before-after' => ['Картинка', '«Dolore e rigidità? → Torna a muoverti»'],
     'sec-composition'  => ['Секция', 'Блок «Risultati dello studio clinico»'],
+    'block-study'      => ['Текст', '«Risultati dello studio clinico»'],
     'sec-reviews'      => ['Секция', 'Отзывы'],
     'reviews-prev'     => ['Кнопка', 'Отзывы: стрелка назад'],
     'reviews-next'     => ['Кнопка', 'Отзывы: стрелка вперёд'],
@@ -62,6 +70,7 @@ $REGISTRY = [
     'experts-next'     => ['Кнопка', 'Специалисты: стрелка вперёд'],
     'btn-experts-more' => ['Кнопка', 'Специалисты: «Mostra altri…» (телефон)'],
     'sec-terms'        => ['Секция', 'Доставка, оплата, гарантия'],
+    'cards-terms'      => ['Карточки', 'Consegna / Pagamento / Garanzia'],
     'sec-faq'          => ['Секция', 'Вопросы и ответы'],
     'faq-all'          => ['Кнопка', '«Mostra tutte le risposte»'],
     'faq-1'            => ['Вопрос', '«È sicuro? Ci sono effetti indesiderati?»'],
@@ -70,13 +79,14 @@ $REGISTRY = [
     'faq-4'            => ['Вопрос', '«Posso pagare alla consegna?»'],
     'faq-5'            => ['Вопрос', '«…se assumo altri medicinali?»'],
     'faq-6'            => ['Вопрос', '«Che cosa succede dopo…?»'],
-    'sec-final'        => ['Секция', 'Финальное предложение (таймер, остаток)'],
+    'sec-final'        => ['Секция', 'Финальное предложение'],
     'cta-final'        => ['Кнопка', '«Richiedi una chiamata» (финал)'],
-    'sec-form'         => ['Секция', 'Форма заявки'],
-    'link-privacy'     => ['Ссылка', 'Informativa privacy (в согласии)'],
-    'btn-submit-hero'  => ['Кнопка', '«Richiedi una chiamata» (форма на первом экране)'],
+    'sec-form'         => ['Секция', 'Форма заявки внизу'],
+    'form-main'        => ['Форма', 'Форма заявки внизу (клики по полям)'],
+    'link-privacy'     => ['Ссылка', 'Informativa privacy (в согласии, обе формы)'],
     'btn-submit'       => ['Кнопка', '«Richiedi una chiamata» (форма внизу)'],
     'cta-sticky'       => ['Кнопка', 'Липкая кнопка внизу экрана'],
+    'footer-links'     => ['Ссылка', 'Ссылки в подвале (условия, privacy, cookie)'],
 ];
 $SECTIONS = array_values(array_filter(array_keys($REGISTRY), fn($k) => strpos($k, 'sec-') === 0));
 
@@ -291,7 +301,7 @@ function rome($utc) { $d = new DateTime((string)$utc, new DateTimeZone('UTC')); 
     $ctaVisits = (int)q($pdo, "SELECT COUNT(DISTINCT pv) FROM track_event WHERE type='click' AND (el LIKE 'cta-%' OR el LIKE 'btn-submit%') AND $where", $params)->fetchColumn();
 
     $form = [];
-    foreach (['focus-name', 'focus-phone', 'submit', 'error-phone', 'error-name', 'error-consent', 'error-alert', 'lead-ok'] as $f) {
+    foreach (['focus-name', 'focus-phone', 'submit', 'error-phone', 'error-name', 'error-consent', 'error-alert', 'lead-ok'] as $base) foreach (['', 'hero-', 'main-'] as $pre) { $f = $pre . $base;
         $form[$f] = (int)q($pdo, "SELECT COUNT(DISTINCT pv) FROM track_event WHERE type='form' AND el=? AND $where", array_merge([$f], $params))->fetchColumn();
     }
     $leadsOk = (int)$pdo->query("SELECT COUNT(*) FROM lead_log WHERE status='ok' AND created_at >= UTC_TIMESTAMP() - INTERVAL $days DAY")->fetchColumn();
@@ -342,15 +352,19 @@ function rome($utc) { $d = new DateTime((string)$utc, new DateTimeZone('UTC')); 
     </table>
   </div>
 
-  <div class="card">
+  <div class="card scroll">
     <h2>Воронка формы</h2>
+    <p class="muted" style="margin-top:-4px">% — от всех визитов. По формам: «Первый экран» и «Внизу» (данные по формам собираются с 19.10.2026; раньше — только «Всего»).</p>
     <table>
+      <tr><th>Шаг</th><th>Всего</th><th class="num">визитов</th><th class="num">Первый экран</th><th class="num">Внизу</th></tr>
       <?php foreach (['focus-name' => 'Нажали в поле «Nome»', 'focus-phone' => 'Нажали в поле «Numero di telefono»', 'submit' => 'Нажали «Richiedi una chiamata» в форме',
                      'error-phone' => 'Получили ошибку телефона', 'error-name' => 'Получили ошибку имени', 'error-consent' => 'Сняли согласие и получили ошибку',
                      'error-alert' => 'Ошибка отправки', 'lead-ok' => 'Заявка принята'] as $k => $label): ?>
         <tr><td><?= $label ?></td>
           <td><div class="bar <?= strpos($k, 'error') === 0 ? 'c' : '' ?>"><i style="width:<?= pct($form[$k], $visits) ?>%"></i></div></td>
-          <td class="num" style="width:130px"><?= $form[$k] ?> · <?= pct($form[$k], $visits) ?>%</td></tr>
+          <td class="num"><?= $form[$k] ?> · <?= pct($form[$k], $visits) ?>%</td>
+          <td class="num"><?= $form['hero-' . $k] ?> · <?= pct($form['hero-' . $k], $visits) ?>%</td>
+          <td class="num"><?= $form['main-' . $k] ?> · <?= pct($form['main-' . $k], $visits) ?>%</td></tr>
       <?php endforeach; ?>
     </table>
   </div>
