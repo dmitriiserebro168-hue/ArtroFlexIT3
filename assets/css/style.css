@@ -755,8 +755,8 @@ h1, h2, h3 { color: var(--ink); }
 @media (min-width: 768px) { .hero-form { padding: 22px 24px 18px; } .hero .hero-form .btn--cta { width: 100%; min-width: 0; } }
 
 /* Иллюстрация колена: на телефоне — перед ценой и формой, на десктопе — справа от текста */
-.hero__img--mobile { display: none; }
+.hero picture.hero__img--mobile { display: none; }
 @media (max-width: 767px) {
-  .hero__img--mobile { display: block; margin: 4px 0 16px; border-radius: var(--radius); }
+  .hero picture.hero__img--mobile { display: block; margin: 4px 0 16px; border-radius: var(--radius); }
   .hero__media { display: none; }
 }
