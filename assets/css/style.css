@@ -760,3 +760,34 @@ h1, h2, h3 { color: var(--ink); }
   .hero picture.hero__img--mobile { display: block; margin: 4px 0 16px; border-radius: var(--radius); }
   .hero__media { display: none; }
 }
+
+/* ---------- Ингредиенты: нумерованный список карточек ---------- */
+.ingredients__title { margin: 40px 0 18px; }
+.ingredients { counter-reset: ing; display: grid; grid-template-columns: 1fr; gap: 12px; }
+.ingredients .card {
+  counter-increment: ing;
+  display: grid; grid-template-columns: 42px 1fr; column-gap: 14px; align-items: start;
+  padding: 16px 16px 16px 14px; border: 1px solid var(--line); background: #fff;
+}
+.ingredients .card::before {
+  content: counter(ing); grid-row: 1 / span 2;
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--trust); color: #fff; font-weight: 800; font-size: 18px;
+}
+.ingredients .card h3 { margin: 8px 0 6px; font-size: 19px; line-height: 1.25; color: var(--ink); }
+.ingredients .card p { margin: 0; font-size: 16px; line-height: 1.55; color: var(--text-soft); }
+.ingredients__more { display: none; width: 100%; margin-top: 14px; min-height: 52px; border-color: var(--trust); color: var(--trust); }
+@media (max-width: 767px) {
+  /* На телефоне сразу видны 4 ингредиента, остальные — по кнопке */
+  .ingredients:not(.is-open) .card:nth-child(n+5) { display: none; }
+  .ingredients:not(.is-open) + .ingredients__more { display: flex; }
+  .ingredients .card { grid-template-columns: 36px 1fr; column-gap: 12px; padding: 14px 14px 14px 12px; }
+  .ingredients .card::before { width: 36px; height: 36px; font-size: 16px; }
+  .ingredients .card h3 { margin-top: 6px; font-size: 18px; }
+  .ingredients .card p { font-size: 15.5px; }
+}
+@media (min-width: 768px) {
+  .ingredients { grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ingredients .card { padding: 20px 22px 20px 18px; }
+}

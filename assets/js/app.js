@@ -386,6 +386,19 @@
     });
   }
 
+  /* ---------- Списки «показать все» (ингредиенты на телефоне) ---------- */
+  function initExpanders() {
+    $$('[data-expand-target]').forEach(function (btn) {
+      var list = btn.previousElementSibling;
+      if (!list) return;
+      btn.addEventListener('click', function () {
+        list.classList.add('is-open');
+        var next = list.children[4];
+        if (next) { next.setAttribute('tabindex', '-1'); next.focus({ preventScroll: true }); }
+      });
+    });
+  }
+
   /* ---------- FAQ ---------- */
   function initFaq() {
     var btn = $('[data-faq-toggle]');
@@ -631,6 +644,7 @@
   initReviews().then(initSlider);
   initVideos();
   initFaq();
+  initExpanders();
   initCta();
   initForms(captureParams());
   initCookies();
