@@ -57,6 +57,11 @@
         </ul>
       </div>
 
+      <!-- Иллюстрация колена: на телефоне — перед ценой и формой (на десктопе она справа, в .hero__media) -->
+      <picture class="media hero__img hero__img--mobile" style="aspect-ratio:900/1125" data-track="img-hero-mobile">
+        <source srcset="assets/img/hero-ginocchio-480.webp 480w, assets/img/hero-ginocchio-900.webp 900w" sizes="100vw" type="image/webp">
+        <img src="assets/img/hero-ginocchio-900.jpg" srcset="assets/img/hero-ginocchio-480.jpg 480w, assets/img/hero-ginocchio-900.jpg 900w" sizes="100vw" width="900" height="1125" alt="Illustrazione dell’articolazione del ginocchio con capsule">
+      </picture>
       <div class="price-strip" data-claim="discount" data-offer-promo data-track="price-hero">
         <span class="price-strip__badge">−<span data-price="discountPercent">50</span>%</span>
         <span class="price-strip__old"><s data-price="old">78,00 €</s></span>
@@ -108,7 +113,7 @@
     <div class="hero__media">
       <picture class="media hero__img" style="aspect-ratio:900/1125" data-track="img-hero">
         <source srcset="assets/img/hero-ginocchio-480.webp 480w, assets/img/hero-ginocchio-900.webp 900w" sizes="(min-width: 900px) 480px, 100vw" type="image/webp">
-        <img src="assets/img/hero-ginocchio-900.jpg" srcset="assets/img/hero-ginocchio-480.jpg 480w, assets/img/hero-ginocchio-900.jpg 900w" sizes="(min-width: 900px) 480px, 100vw" width="900" height="1125" alt="Illustrazione dell’articolazione del ginocchio con capsule" fetchpriority="high">
+        <img src="assets/img/hero-ginocchio-900.jpg" srcset="assets/img/hero-ginocchio-480.jpg 480w, assets/img/hero-ginocchio-900.jpg 900w" sizes="(min-width: 900px) 480px, 100vw" width="900" height="1125" loading="lazy" alt="Illustrazione dell’articolazione del ginocchio con capsule">
       </picture>
     </div>
   </div>
