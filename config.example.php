@@ -27,4 +27,10 @@ return array(
     'alert_email'    => 'you@example.com',
     // Пароль дашборда https://it3.artro-flex.com/admin/stats.php (пусто — пароль редактора отзывов)
     'stats_password' => 'ПРИДУМАЙТЕ_ПАРОЛЬ',
+
+    // Копия каждой заявки в LeadCenter (необязательно). key — API-ключ источника из LeadCenter → Источники.
+    'leadcenter' => array(
+        'url' => 'https://leadcenter.artro-flex.com/api/lead',
+        'key' => '',
+    ),
 );

@@ -266,6 +266,48 @@ foreach ($cfg['partner']['map'] as $ours => $theirs) {
     if ($theirs !== null && $theirs !== '' && array_key_exists($ours, $lead)) $payload[$theirs] = $lead[$ours];
 }
 
+// ---------- Копия в LeadCenter: после ответа посетителю, при любом исходе отправки в Webvork ----------
+/** Без блока 'leadcenter' (url, key) в секретном конфиге ничего не делает. Ошибки — только в error_log. */
+function leadcenter_forward(array $cfg, array $payload): void
+{
+    $lc = $cfg['leadcenter'] ?? [];
+    if (empty($lc['url']) || empty($lc['key']) || !function_exists('curl_init')) return;
+    if (function_exists('litespeed_finish_request')) litespeed_finish_request();
+    elseif (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+    $code = 0;
+    $resp = '';
+    for ($attempt = 1; $attempt <= 2; $attempt++) {
+        $ch = curl_init($lc['url']);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'X-Api-Key: ' . $lc['key']],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT        => 10,
+        ]);
+        $resp = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($code === 200 || ($code >= 400 && $code < 500)) break;
+        sleep(2);
+    }
+    if ($code !== 200) {
+        error_log('lead.php: leadcenter forward failed: HTTP ' . $code . ' ' . mb_substr((string)$resp, 0, 200));
+    }
+}
+register_shutdown_function('leadcenter_forward', $cfg, [
+    'external_id'     => $leadId,
+    'name'            => $name,
+    'phone'           => $phone,
+    'country'         => 'IT',
+    'ip'              => $ip,
+    'user_agent'      => $LEAD['ua'],
+    'referrer'        => $LEAD['ref'],
+    'landing_version' => $lead['landing_version'],
+    'site'            => $_SERVER['HTTP_HOST'] ?? '',
+] + $LEAD['utm']);
+
 // ---------- Отправка партнёру с повтором при временной ошибке ----------
 function partner_send(array $p, string $url, array $payload, string $leadId): array
 {

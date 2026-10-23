@@ -79,6 +79,8 @@ return (function (): array {
         'db'              => is_array($secret['db'] ?? null) ? $secret['db'] : [],
         // Telegram-бот: сообщение о каждом принятом лиде ['token' => '…', 'chat_id' => '-100…']
         'telegram'        => is_array($secret['telegram'] ?? null) ? $secret['telegram'] : [],
+        // Копия каждой заявки в LeadCenter ['url' => 'https://leadcenter.artro-flex.com/api/lead', 'key' => '…']
+        'leadcenter'      => is_array($secret['leadcenter'] ?? null) ? $secret['leadcenter'] : [],
         // Письма об ошибках отправки лидов (необязательно)
         'alert_email'     => $s('alert_email'),
         // Пароль дашборда /admin/stats.php (пусто — используется пароль редактора отзывов)
