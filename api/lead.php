@@ -159,6 +159,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && ($_GET['health'] ?? '') === 
         'telegram_set'      => !empty($cfg['telegram']['token']) && !empty($cfg['telegram']['chat_id']),
         'telegram_chat_id'  => (string)($cfg['telegram']['chat_id'] ?? ''),
         'stats_password_set'=> (string)($cfg['stats_password'] ?? '') !== '',
+        'leadcenter_set'    => !empty($cfg['leadcenter']['url']) && !empty($cfg['leadcenter']['key']),
+        'leadcenter_ping'   => leadcenter_ping($cfg),
+        'leadcenter_last'   => json_decode((string)@file_get_contents($dataDir . '/leadcenter_last.json'), true),
         'php'               => PHP_VERSION,
     ]);
 }
@@ -295,6 +298,28 @@ function leadcenter_forward(array $cfg, array $payload): void
     if ($code !== 200) {
         error_log('lead.php: leadcenter forward failed: HTTP ' . $code . ' ' . mb_substr((string)$resp, 0, 200));
     }
+    // Результат последней пересылки — для lead.php?health=config
+    @file_put_contents(rtrim($cfg['data_dir'], '/\\') . '/leadcenter_last.json', json_encode([
+        'at' => date('c'), 'http' => $code, 'response' => mb_substr((string)$resp, 0, 300),
+    ], JSON_UNESCAPED_UNICODE), LOCK_EX);
+}
+
+/** Проверка ключа LeadCenter без создания лида: GET …/api/ping. */
+function leadcenter_ping(array $cfg): ?array
+{
+    $lc = $cfg['leadcenter'] ?? [];
+    if (empty($lc['url']) || empty($lc['key']) || !function_exists('curl_init')) return null;
+    $ch = curl_init(preg_replace('#/lead/?$#', '/ping', (string)$lc['url']));
+    curl_setopt_array($ch, [
+        CURLOPT_HTTPHEADER     => ['X-Api-Key: ' . $lc['key']],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_TIMEOUT        => 8,
+    ]);
+    $resp = curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return ['http' => $code, 'response' => json_decode((string)$resp, true) ?? mb_substr((string)$resp, 0, 200)];
 }
 register_shutdown_function('leadcenter_forward', $cfg, [
     'external_id'     => $leadId,
