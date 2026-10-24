@@ -269,16 +269,18 @@ foreach ($cfg['partner']['map'] as $ours => $theirs) {
     if ($theirs !== null && $theirs !== '' && array_key_exists($ours, $lead)) $payload[$theirs] = $lead[$ours];
 }
 
-// ---------- Копия в LeadCenter: после ответа посетителю, при любом исходе отправки в Webvork ----------
-/** Без блока 'leadcenter' (url, key) в секретном конфиге ничего не делает. Ошибки — только в error_log. */
-function leadcenter_forward(array $cfg, array $payload): void
+// ---------- LeadCenter — основной получатель заявки: в Webvork отправляет он ----------
+/**
+ * Синхронная отправка заявки в LeadCenter (блок 'leadcenter' => url, key в секретном конфиге).
+ * @return array [HTTP-код, ответ, ошибка curl, мс]
+ */
+function leadcenter_send(array $cfg, array $payload): array
 {
-    $lc = $cfg['leadcenter'] ?? [];
-    if (empty($lc['url']) || empty($lc['key']) || !function_exists('curl_init')) return;
-    if (function_exists('litespeed_finish_request')) litespeed_finish_request();
-    elseif (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+    $lc = $cfg['leadcenter'];
     $code = 0;
     $resp = '';
+    $err = '';
+    $t0 = microtime(true);
     for ($attempt = 1; $attempt <= 2; $attempt++) {
         $ch = curl_init($lc['url']);
         curl_setopt_array($ch, [
@@ -286,22 +288,22 @@ function leadcenter_forward(array $cfg, array $payload): void
             CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_UNICODE),
             CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'X-Api-Key: ' . $lc['key']],
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_TIMEOUT        => 8,
         ]);
         $resp = curl_exec($ch);
         $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err = curl_error($ch);
         curl_close($ch);
+        $resp = is_string($resp) ? $resp : '';
         if ($code === 200 || ($code >= 400 && $code < 500)) break;
-        sleep(2);
+        if ($attempt < 2) sleep(1);
     }
-    if ($code !== 200) {
-        error_log('lead.php: leadcenter forward failed: HTTP ' . $code . ' ' . mb_substr((string)$resp, 0, 200));
-    }
-    // Результат последней пересылки — для lead.php?health=config
+    // Результат последней отправки — для lead.php?health=config
     @file_put_contents(rtrim($cfg['data_dir'], '/\\') . '/leadcenter_last.json', json_encode([
-        'at' => date('c'), 'http' => $code, 'response' => mb_substr((string)$resp, 0, 300),
+        'at' => date('c'), 'http' => $code, 'response' => mb_substr($resp, 0, 300),
     ], JSON_UNESCAPED_UNICODE), LOCK_EX);
+    return [$code, $resp, $err, (int)round((microtime(true) - $t0) * 1000)];
 }
 
 /** Проверка ключа LeadCenter без создания лида: GET …/api/ping. */
@@ -321,17 +323,6 @@ function leadcenter_ping(array $cfg): ?array
     curl_close($ch);
     return ['http' => $code, 'response' => json_decode((string)$resp, true) ?? mb_substr((string)$resp, 0, 200)];
 }
-register_shutdown_function('leadcenter_forward', $cfg, [
-    'external_id'     => $leadId,
-    'name'            => $name,
-    'phone'           => $phone,
-    'country'         => 'IT',
-    'ip'              => $ip,
-    'user_agent'      => $LEAD['ua'],
-    'referrer'        => $LEAD['ref'],
-    'landing_version' => $lead['landing_version'],
-    'site'            => $_SERVER['HTTP_HOST'] ?? '',
-] + $LEAD['utm']);
 
 // ---------- Отправка партнёру с повтором при временной ошибке ----------
 function partner_send(array $p, string $url, array $payload, string $leadId): array
@@ -376,7 +367,41 @@ $done = false;
 $apiMsg = '';
 $guid = '';
 $apiRejected = false;
-do {
+$viaLeadcenter = false;
+
+// Сначала LeadCenter. Принял — готово, в Webvork лид отправит он.
+// Не настроен или не ответил — отправляем в Webvork напрямую, как раньше, чтобы не потерять заявку.
+if (!empty($cfg['leadcenter']['url']) && !empty($cfg['leadcenter']['key']) && function_exists('curl_init')) {
+    [$lcCode, $lcResp, $lcErr, $lcMs] = leadcenter_send($cfg, [
+        'external_id'     => $leadId,
+        'name'            => $name,
+        'phone'           => $phone,
+        'country'         => 'IT',
+        'ip'              => $ip,
+        'user_agent'      => $LEAD['ua'],
+        'referrer'        => $LEAD['ref'],
+        'landing_version' => $lead['landing_version'],
+        'site'            => $_SERVER['HTTP_HOST'] ?? '',
+    ] + $LEAD['utm']);
+    $ATTEMPTS_LOG[] = [
+        'n' => 1, 'host' => parse_url((string)$cfg['leadcenter']['url'], PHP_URL_HOST), 'http' => $lcCode,
+        'ms' => $lcMs, 'error' => $lcErr, 'body' => mb_substr($lcResp, 0, 1000),
+    ];
+    $lcJson = json_decode($lcResp, true);
+    if ($lcCode === 200 && !empty($lcJson['ok'])) {
+        $accepted = true;
+        $viaLeadcenter = true;
+        $attempts = 1;
+        $resp = $lcResp;
+        $guid = 'leadcenter#' . ($lcJson['lead_id'] ?? '');
+    } else {
+        log_event($dataDir, 'error', 'leadcenter_failed_direct_webvork', [
+            'lead_id' => $leadId, 'http' => $lcCode, 'curl' => $lcErr, 'resp' => mb_substr($lcResp, 0, 300),
+        ]);
+    }
+}
+
+if (!$accepted) do {
     $attempts++;
     // Основной адрес, при сетевой/5xx ошибке — запасной (как в it2)
     foreach ($urls as $url) {
@@ -441,7 +466,7 @@ tg_notify($cfg, implode("\n", [
     '✅ <b>Новый лид — ' . tg_esc($_SERVER['HTTP_HOST'] ?? 'it3.artro-flex.com') . '</b>',
     '👤 Имя: ' . tg_esc($name),
     '📞 Телефон: ' . tg_esc($phone),
-    '📨 Ответ Webvork: <code>' . tg_esc(mb_substr((string)$resp, 0, 500)) . '</code>',
+    '📨 Ответ ' . ($viaLeadcenter ? 'LeadCenter' : 'Webvork (напрямую)') . ': <code>' . tg_esc(mb_substr((string)$resp, 0, 500)) . '</code>',
     '🎯 Кампания: ' . tg_esc(($LEAD['utm']['utm_campaign'] ?? '—') . ' / ' . ($LEAD['utm']['utm_source'] ?? '—')),
     '🕒 ' . date('d.m.Y H:i') . ' (Рим)',
 ]));

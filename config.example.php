@@ -28,7 +28,8 @@ return array(
     // Пароль дашборда https://it3.artro-flex.com/admin/stats.php (пусто — пароль редактора отзывов)
     'stats_password' => 'ПРИДУМАЙТЕ_ПАРОЛЬ',
 
-    // Копия каждой заявки в LeadCenter (необязательно). key — API-ключ источника из LeadCenter → Источники.
+    // LeadCenter — основной получатель заявок, в Webvork отправляет он. key — API-ключ источника из LeadCenter → Источники.
+    // Без этого блока (или если LeadCenter не ответил) заявка уходит в Webvork напрямую.
     'leadcenter' => array(
         'url' => 'https://leadcenter.artro-flex.com/api/lead',
         'key' => '',
