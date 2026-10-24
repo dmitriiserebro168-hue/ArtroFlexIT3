@@ -462,7 +462,8 @@ echo json_encode(['ok' => true, 'lead_id' => $leadId], JSON_UNESCAPED_UNICODE);
 if (function_exists('litespeed_finish_request')) litespeed_finish_request();
 elseif (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
 
-tg_notify($cfg, implode("\n", [
+// Лид, принятый LeadCenter, сообщает в Telegram сам LeadCenter — здесь только прямые отправки в Webvork
+if (!$viaLeadcenter) tg_notify($cfg, implode("\n", [
     '✅ <b>Новый лид — ' . tg_esc($_SERVER['HTTP_HOST'] ?? 'it3.artro-flex.com') . '</b>',
     '👤 Имя: ' . tg_esc($name),
     '📞 Телефон: ' . tg_esc($phone),
